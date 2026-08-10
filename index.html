@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משחק התרופות — ALS מבוגרים</title>
+<style>
+  :root{
+    --bg:#0e1a2b; --card:#152840; --card2:#1b3252; --line:#2b4a72;
+    --text:#eaf1fa; --dim:#9db4d0; --accent:#4da3ff; --accent2:#7cc4ff;
+    --ok:#2ecc8f; --bad:#ff6b6b; --warn:#ffc857;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Segoe UI", Arial, "Noto Sans Hebrew", sans-serif;
+    background:linear-gradient(160deg,#0a1424 0%, #10233c 55%, #0d1b30 100%);
+    color:var(--text); min-height:100vh; direction:rtl;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 16px 60px;}
+  header{text-align:center; margin-bottom:18px;}
+  header h1{font-size:1.7rem; color:var(--accent2); letter-spacing:.5px;}
+  header p{color:var(--dim); font-size:.9rem; margin-top:4px;}
+  .scorebar{
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0 20px;
+  }
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:8px 14px; font-size:.85rem; color:var(--dim);
+  }
+  .stat b{color:var(--text); font-size:1rem; margin-inline-start:6px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:14px;}
+  .chip{
+    border:1px solid var(--line); background:var(--card); color:var(--dim);
+    border-radius:999px; padding:6px 14px; font-size:.85rem; cursor:pointer; user-select:none;
+    transition:.15s;
+  }
+  .chip.on{background:var(--accent); border-color:var(--accent); color:#06182e; font-weight:600;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .qnum{color:var(--dim); font-size:.8rem; margin-bottom:8px; display:flex; justify-content:space-between;}
+  .drug{
+    font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:6px;
+  }
+  .cat{display:inline-block; background:var(--card2); border:1px solid var(--line);
+    color:var(--accent2); font-size:.75rem; border-radius:8px; padding:3px 10px; margin-bottom:12px;}
+  .ctx{
+    background:var(--card2); border-inline-start:4px solid var(--accent);
+    border-radius:10px; padding:12px 14px; font-size:1rem; line-height:1.6; margin-bottom:18px;
+  }
+  label{display:block; font-size:.9rem; color:var(--dim); margin:12px 0 6px;}
+  .field{position:relative;}
+  input[type=text]{
+    width:100%; background:#0f2038; border:1.5px solid var(--line); border-radius:10px;
+    color:var(--text); padding:11px 13px; font-size:1rem; direction:rtl; outline:none; transition:.15s;
+  }
+  input[type=text]:focus{border-color:var(--accent);}
+  .field.ok input{border-color:var(--ok); background:rgba(46,204,143,.08);}
+  .field.bad input{border-color:var(--bad); background:rgba(255,107,107,.07);}
+  .mark{position:absolute; inset-inline-end:12px; top:50%; transform:translateY(-50%); font-size:1.1rem;}
+  .btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;}
+  button{
+    border:none; border-radius:10px; padding:11px 20px; font-size:.95rem; font-weight:600;
+    cursor:pointer; transition:.15s; font-family:inherit;
+  }
+  .primary{background:var(--accent); color:#06182e;}
+  .primary:hover{background:var(--accent2);}
+  .ghost{background:transparent; color:var(--accent2); border:1.5px solid var(--line);}
+  .ghost:hover{border-color:var(--accent);}
+  .success{background:var(--ok); color:#03291c;}
+  .feedback{margin-top:14px; font-size:.95rem; line-height:1.5; border-radius:10px; padding:12px 14px; display:none;}
+  .feedback.show{display:block;}
+  .feedback.good{background:rgba(46,204,143,.12); border:1px solid rgba(46,204,143,.4); color:#bff3de;}
+  .feedback.err{background:rgba(255,107,107,.1); border:1px solid rgba(255,107,107,.35); color:#ffd4d4;}
+  .feedback.hint{background:rgba(255,200,87,.1); border:1px solid rgba(255,200,87,.35); color:#ffe9bd;}
+  .answerbox{margin-top:14px; display:none; background:var(--card2); border:1px solid var(--line);
+    border-radius:12px; padding:14px 16px; line-height:1.7; font-size:.95rem;}
+  .answerbox.show{display:block;}
+  .answerbox b{color:var(--accent2);}
+  .answerbox .src{color:var(--dim); font-size:.8rem; margin-top:8px;}
+  .progress{height:6px; background:var(--card2); border-radius:99px; overflow:hidden; margin-bottom:18px;}
+  .progress i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--ok)); width:0%; transition:.3s;}
+  .endcard{text-align:center; padding:40px 20px;}
+  .endcard .big{font-size:3rem; margin-bottom:10px;}
+  .endcard h2{color:var(--accent2); margin-bottom:8px;}
+  .endcard p{color:var(--dim); margin-bottom:6px;}
+  .startcard{text-align:center;}
+  .startcard h2{color:var(--accent2); margin-bottom:10px;}
+  .startcard p{color:var(--dim); line-height:1.7; margin-bottom:16px; font-size:.95rem;}
+  .disclaimer{text-align:center; color:#5f7591; font-size:.75rem; margin-top:26px; line-height:1.5;}
+  @media(max-width:520px){ .drug{font-size:1.3rem;} .btns button{flex:1;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💉 משחק התרופות — ALS מבוגרים</h1>
+    <p>לפי אוגדן הפרוטוקולים של איחוד הצלה, מהדורת 2023</p>
+  </header>
+
+  <div class="scorebar" id="scorebar" style="display:none">
+    <div class="stat">שאלה<b id="sQ">0/0</b></div>
+    <div class="stat">נכון בניסיון ראשון<b id="sFirst">0</b></div>
+    <div class="stat">רצף<b id="sStreak">0</b>🔥</div>
+  </div>
+
+  <div class="progress" id="progressWrap" style="display:none"><i id="progressBar"></i></div>
+
+  <!-- START -->
+  <div class="card startcard" id="startCard">
+    <h2>מוכנים?</h2>
+    <p>בכל שאלה תקבלו תרחיש קליני ותרופה.<br>
+    עליכם לרשום את <b>צורת ההופעה</b>, את <b>המינון</b> המתאים להקשר ואת <b>אופן ההכנה</b>.<br>
+    טעיתם? אפשר לנסות שוב, לבקש רמז או לחשוף את התשובה.<br>
+    הבדיקה מזהה מספרים, יחידות ומילות מפתח — אין צורך בניסוח מדויק.</p>
+    <div class="chips" id="catChips"></div>
+    <div class="btns" style="justify-content:center">
+      <button class="primary" onclick="startGame()">התחל משחק</button>
+    </div>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="card" id="qCard" style="display:none">
+    <div class="qnum"><span id="qCounter"></span><span id="qAttempts"></span></div>
+    <div class="drug" id="qDrug"></div>
+    <span class="cat" id="qCat"></span>
+    <div class="ctx" id="qCtx"></div>
+
+    <div id="formField">
+      <label>💊 צורת הופעה — איך התרופה מגיעה?</label>
+      <div class="field" id="formWrap">
+        <input type="text" id="formInput" placeholder='לדוגמה: אמפולה 1 מ"ג / 1 מ"ל' autocomplete="off">
+        <span class="mark" id="formMark"></span>
+      </div>
+    </div>
+
+    <div>
+      <label>🧪 מינון — מה תיתן ואיך, לפי התרחיש?</label>
+      <div class="field" id="doseWrap">
+        <input type="text" id="doseInput" placeholder='לדוגמה: 1 מ"ג IV כל 3–5 דקות' autocomplete="off">
+        <span class="mark" id="doseMark"></span>
+      </div>
+    </div>
+
+    <div id="prepField">
+      <label>🧰 הכנה — איך מכינים את התרופה?</label>
+      <div class="field" id="prepWrap">
+        <input type="text" id="prepInput" placeholder='לדוגמה: לשאוב 2 מ"ל לשקית 100 מ"ל סליין' autocomplete="off">
+        <span class="mark" id="prepMark"></span>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="answerbox" id="answerBox"></div>
+
+    <div class="btns" id="btnRow">
+      <button class="primary" id="checkBtn" onclick="checkAnswer()">בדוק ✓</button>
+      <button class="ghost" id="hintBtn" onclick="showHint()">רמז 💡</button>
+      <button class="ghost" id="revealBtn" onclick="reveal()">הצג תשובה 👁</button>
+      <button class="success" id="nextBtn" onclick="nextQ()" style="display:none">שאלה הבאה ←</button>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="card endcard" id="endCard" style="display:none">
+    <div class="big" id="endEmoji">🏆</div>
+    <h2 id="endTitle"></h2>
+    <p id="endStats"></p>
+    <p id="endMsg"></p>
+    <div class="btns" style="justify-content:center; margin-top:16px">
+      <button class="primary" onclick="location.reload()">שחק שוב 🔄</button>
+    </div>
+  </div>
+
+  <div class="disclaimer">כלי לימוד אישי בלבד — בכל מקרה של ספק, האוגדן הרשמי קובע.<br>מבוסס על אוגדן פרוטוקולים ALS, איחוד הצלה 2023.</div>
+</div>
+
+<script>
+/* ================= שאלות ================= */
+/* fc / dc: קבוצות בדיקה — כל קבוצה חייבת להתקיים, מספיקה חלופה אחת בקבוצה */
+const F = {
+  adr:{a:'אמפולה 1 מ"ג / 1 מ"ל', c:[['1מג'],['1מל','אמפול']]},
+  amio:{a:'אמפולה 150 מ"ג / 3 מ"ל', c:[['150מג'],['3מל']]},
+  lido:{a:'200 מ"ג / 10 מ"ל (2%)', c:[['200מג'],['10מל','2%']]},
+  mg:{a:'אמפולה 5 גרם / 10 מ"ל (50%)', c:[['5גרם'],['10מל','50%']]},
+  bic:{a:'בקבוק 8.4% / 100 מ"ל (מאק"ו)', c:[['8.4'],['100מל']]},
+  nar:{a:'אמפולה 0.4 מ"ג / 1 מ"ל', c:[['0.4מג'],['1מל']]},
+  dopa:{a:'אמפולה 200 מ"ג / 5 מ"ל', c:[['200מג'],['5מל']]},
+  dorm:{a:'אמפולה 5 מ"ג / 1 מ"ל', c:[['5מג'],['1מל']]},
+  eto:{a:'אמפולה 20 מ"ג / 10 מ"ל (אמולסיה)', c:[['20מג'],['10מל']]},
+  ket:{a:'פלאקון 500 מ"ג / 10 מ"ל', c:[['500מג'],['10מל']]},
+  atro:{a:'אמפולה 1 מ"ג / 1 מ"ל', c:[['1מג'],['1מל']]},
+  nit:{a:'תרסיס: איזוקט 1.25 מ"ג או ניטרולינגואל 0.4 מ"ג בכל לחיצה', c:[['1.25מג','0.4מג','תרסיס','ספריי']]},
+  iso:{a:'איזוקט 10 מ"ג / 10 מ"ל', c:[['10מג'],['10מל']]},
+  fus:{a:'אמפולה 20 מ"ג / 2 מ"ל', c:[['20מג'],['2מל']]},
+  ven:{a:'בקבוקון 100 מ"ג / 20 מ"ל (5 מ"ג במ"ל)', c:[['100מג','5מג'],['20מל','1מל']]},
+  iro:{a:'בקבוקון 5 מ"ג / 20 מ"ל (0.25 מ"ג במ"ל)', c:[['5מג','0.25מג'],['20מל','1מל']]},
+  sol:{a:'פלאקון: 125 מ"ג אבקה + 2 מ"ל נוזל', c:[['125מג'],['אבקה','פלאקון','2מל']]},
+  glu:{a:'10 גרם / 20 מ"ל (50%)', c:[['10גרם','50%'],['20מל']]},
+  gel:{a:'שפורפרת ג\'ל 15 גרם', c:[['15גרם','שפורפרת','שפופרת','גל']]},
+  ade:{a:'אמפולה 6 מ"ג / 2 מ"ל', c:[['6מג'],['2מל']]},
+  ika:{a:'אמפולה 5 מ"ג / 2 מ"ל', c:[['5מג'],['2מל']]},
+  pro:{a:'1 גרם / 10 מ"ל', c:[['1גרם','1000מג'],['10מל']]},
+  cap:{a:'טבליות 25 מ"ג', c:[['25מג'],['טבלי','כדור']]},
+  asp:{a:'כדור 100 מ"ג או 300 מ"ג', c:[['100','300'],['כדור','טבלי']]},
+  mor:{a:'אמפולה 10 מ"ג / 1 מ"ל', c:[['10מג'],['1מל']]},
+  pra:{a:'אמפולה 10 מ"ג / 2 מ"ל', c:[['10מג'],['2מל']]},
+  aca:{a:'אמפולה 1 גרם / 100 מ"ל או כדור 500 מ"ג', c:[['1גרם','1000מג','500מג']]},
+  opt:{a:'אמפולה 1 גרם / 2 מ"ל', c:[['1גרם','1000מג'],['2מל']]},
+  tra:{a:'אמפולה 100 מ"ג / 2 מ"ל', c:[['100מג'],['2מל']]},
+  hep:{a:'25,000 יחידות / 5 מ"ל', c:[['25000'],['5מל']]},
+  hex:{a:'אמפולה 500 מ"ג / 10 מ"ל', c:[['500מג'],['10מל']]},
+};
+
+const QUESTIONS = [
+/* ---- דום לב והחייאה ---- */
+{c:'דום לב והחייאה', d:'אדרנלין', ctx:'מטופל בן 68 בדום לב, במוניטור אסיסטולה. הושגה גישה ורידית. מה תיתן?',
+ f:F.adr, dose:'1 מ"ג IV/IO כל 3–5 דקות (מוקדם ככל האפשר), ולאחר כל מתן — שטיפה עם 20 מ"ל סליין. בהיעדר גישה: IT 3 מ"ג.', dc:[['1מג']],
+ pc:[['20מל']], prep:'מתן בפוש + שטיפה עם 20 מ"ל סליין 0.9% אחרי כל מנה. IT: לשאוב 3 מ"ל למזרק 5 מ"ל + 2 מ"ל סליין.', src:'פרוטוקול Asystole/PEA ו-VF/pVT'},
+{c:'דום לב והחייאה', d:'אמיודארון', ctx:'VF עמיד — המטופל קיבל 3 שוקים ואדרנלין ועדיין ב-VF. מה המנה הראשונה והשנייה?',
+ f:F.amio, dose:'מנה 1: 300 מ"ג IV/IO בפוש. מנה 2: 150 מ"ג כעבור 3–5 דקות.', dc:[['300מג'],['150מג']],
+ pc:[['20מל']], prep:'לשאוב למזרק 20 מ"ל ולהשלים עם סליין 0.9%.', src:'פרוטוקול VF/pVT'},
+{c:'דום לב והחייאה', d:'לידוקאין', ctx:'VF עמיד ואין אמיודארון בניידת. החלטת לתת לידוקאין. מה המינון?',
+ f:F.lido, dose:'1–1.5 מ"ג/ק"ג IV/IO; מנה חוזרת 0.5–0.75 מ"ג/ק"ג; מקסימום מצטבר 3 מ"ג/ק"ג.', dc:[['1-1.5מג','1.5מג','1מג/קג'],['קג']],
+ pc:[['פוש','ישיר']], prep:'מתן בפוש.', src:'פרוטוקול VF/pVT'},
+{c:'דום לב והחייאה', d:'מגנזיום', ctx:'במוניטור: טכיקרדיה רחבה פולימורפית מתפתלת סביב הציר — Torsades de Pointes ללא דופק. מה תיתן ובאיזה מינון?',
+ f:F.mg, dose:'1–2 גרם IV/IO בבולוס איטי (5–10 דקות).', dc:[['1-2גרם','1גרם','2גרם']],
+ pc:[['20מל','2-4מל','4מל','2מל']], prep:'לשאוב 2–4 מ"ל למזרק 20 מ"ל ולהשלים עם D5W או NS.', src:'פרוטוקול VF/pVT'},
+{c:'דום לב והחייאה', d:'סודיום ביקרבונט', ctx:'דום לב במטופל דיאליזה עם חשד להיפרקלמיה. יש התוויה לביקרבונט — מה המינון?',
+ f:F.bic, dose:'1 מאק"ו (mEq) לק"ג IV.', dc:[['1מאק','1meq'],['קג']],
+ pc:[['סט','בקבוק'],['מהיר']], prep:'חיבור סט נוזלים לבקבוקון והזלפה מהירה.', src:'פרוטוקול VF/pVT / Asystole-PEA'},
+/* ---- הפרעות קצב ---- */
+{c:'הפרעות קצב', d:'אדנוזין', ctx:'צעירה בת 24 עם דפיקות לב פתאומיות. במוניטור: טכיקרדיה צרה סדירה 180. יציבה. גירוי ואגלי לא עזר. מה תיתן?',
+ f:F.ade, dose:'מנה 1: 6 מ"ג IV בפוש מהיר; מנה 2: 12 מ"ג (המתן 1–2 דקות בין המנות).', dc:[['6מג'],['12מג']],
+ pc:[['פוש','מהיר'],['20מל']], prep:'פוש מהיר + שטיפה מיידית 20 מ"ל סליין (מחבר T), וריד קרוב למרכז.', src:'פרוטוקול טכיקרדיה'},
+{c:'הפרעות קצב', d:'איקקור (וראפמיל)', ctx:'טכיקרדיה צרה סדירה שלא הגיבה לאדנוזין. ל"ד 128/80. מהו מינון האיקקור?',
+ f:F.ika, dose:'2.5–5 מ"ג IV במתן איטי במשך 2 דקות; מנות חוזרות 5 מ"ג כל 15 דקות; מקסימום 30 מ"ג.', dc:[['2.5-5מג','2.5מג','5מג']],
+ pc:[['3מל','5מל'],['איטי','2דק','2ד']], prep:'לשאוב 2 מ"ל למזרק 5 מ"ל + 3 מ"ל סליין; ניטור ל"ד ודופק בין המנות.', src:'פרוטוקול טכיקרדיה'},
+{c:'הפרעות קצב', d:'אמיודארון', ctx:'טכיקרדיה רחבה סדירה עם דופק, מטופל יציב. בחרת באמיודארון — מהי מנת ההעמסה?',
+ f:F.amio, dose:'150 מ"ג IV במשך 10 דקות; מנה נוספת בהיעדר תגובה לאחר 5–10 דקות. אחזקה: 1 מ"ג/דקה.', dc:[['150מג'],['10דק']],
+ pc:[['100מל'],['d5w','5%','דקסטרוז']], prep:'אמפולה שלמה לשקית 100 מ"ל D5W, טפטוף 10 דקות.', src:'פרוטוקול טכיקרדיה'},
+{c:'הפרעות קצב', d:'פרונסטיל', ctx:'החלטה על פרונסטיל בטכיאריתמיה. מה קצב המתן ומתי עוצרים?',
+ f:F.pro, dose:'20–50 מ"ג/דקה IV (עד 30 דקות); אחזקה 1–4 מ"ג/דקה; מקסימום 17 מ"ג/ק"ג. עצירה: חזרת קצב, ירידת ל"ד, התרחבות QRS ב-50%.', dc:[['20-50מג','50מג','20מג']],
+ pc:null, prep:'מתן מבוקר תוך ניטור רציף.', src:'פרוטוקול טכיקרדיה'},
+{c:'הפרעות קצב', d:'קלציום גלוקונאט', ctx:'לאחר מתן איקקור ל"ד צנח ל-88 סיסטולי. מה תיתן ובאיזה מינון?',
+ f:null, dose:'1–2 גרם IV (ולהפסיק את האיקקור).', dc:[['1-2גרם','1גרם','2גרם']],
+ pc:null, prep:'מתן IV איטי.', src:'פרוטוקול טכיקרדיה'},
+{c:'הפרעות קצב', d:'אטרופין', ctx:'מטופל בן 70 עם סחרחורת, דופק 38, ל"ד 85/50 — ברדיקרדיה סימפטומטית. מה תיתן?',
+ f:F.atro, dose:'1 מ"ג IV; מנה כל 3–5 דקות; מקסימום 3 מ"ג.', dc:[['1מג']],
+ pc:[['פוש','ישיר']], prep:'שאיבה למזרק ומתן בפוש. אם אין תגובה — קיצוב / דופמין / אדרנלין.', src:'פרוטוקול ברדיקרדיה'},
+{c:'הפרעות קצב', d:'אדרנלין', ctx:'ברדיקרדיה שלא הגיבה לאטרופין, בהמתנה לקיצוב. מהו מינון האדרנלין בטפטוף?',
+ f:F.adr, dose:'2–10 מק"ג/דקה IV בטפטוף.', dc:[['2-10מקג','2מקג','10מקג']],
+ pc:[['100מל']], prep:'לשאוב 1 מ"ל לשקית 100 מ"ל סליין → 10 מק"ג/מ"ל; טפטוף איטי.', src:'פרוטוקול ברדיקרדיה / ROSC'},
+/* ---- נשימה ---- */
+{c:'נשימה', d:'ונטולין', ctx:'אסתמטית בת 30 בהתקף בינוני: מדברת במשפטים קטועים, צפצופים, סטורציה 92%. מה מינון הוונטולין?',
+ f:F.ven, dose:'2.5 מ"ג באינהלציה; עד 3 מנות בהפרש 20 דקות (בשילוב אירוונט).', dc:[['2.5מג']],
+ pc:[['2מל'],['6ליטר','6lpm','6ל']], prep:'לשאוב 0.5 מ"ל + 2 מ"ל סליין לכוסית האינהלציה; חמצן 6 ליטר/דקה.', src:'פרוטוקול אסתמה'},
+{c:'נשימה', d:'ונטולין', ctx:'התקף אסתמה קשה: לא משלים משפט, שרירי עזר, כניסת אוויר ירודה. מה מינון הוונטולין עכשיו?',
+ f:F.ven, dose:'5 מ"ג באינהלציה; עד 3 מנות בהפרש 20 דקות, בשילוב אירוונט.', dc:[['5מג']],
+ pc:[['2מל'],['6ליטר','6lpm','6ל']], prep:'לשאוב 1 מ"ל + 2 מ"ל סליין; חמצן 6 ליטר/דקה.', src:'פרוטוקול אסתמה'},
+{c:'נשימה', d:'אירוונט', ctx:'באותו התקף אסתמה אתה מוסיף אירוונט לאינהלציה. מה המינון?',
+ f:F.iro, dose:'0.5 מ"ג (2 מ"ל); בהתקף קשה — עד 3 מנות בשילוב ונטולין.', dc:[['0.5מג']],
+ pc:[['2מל'],['6ליטר','6lpm','6ל']], prep:'לשאוב 2 מ"ל + 2 מ"ל סליין לכוסית האינהלציה.', src:'פרוטוקול אסתמה / COPD'},
+{c:'נשימה', d:'סולומדרול', ctx:'התקף אסתמה עם גישה ורידית. אתה נותן סטרואיד — מה המינון?',
+ f:F.sol, dose:'125 מ"ג IV, מנה חד-פעמית.', dc:[['125מג']],
+ pc:[['מיסוס','לחיצ','פקק','נער'],['2מל']], prep:'לחיצה על פקק הפלאקון למיסוס האבקה, ניעור עד נוזל צלול, שאיבת 2 מ"ל.', src:'אסתמה / COPD / אנאפילקסיס'},
+{c:'נשימה', d:'אדרנלין', ctx:'אסתמה קשה ללא שיפור אחרי אינהלציות. מהו מינון האדרנלין ובאיזו דרך מתן?',
+ f:F.adr, dose:'0.3 מ"ג SC (תת-עורי). זהירות מעל גיל 40 / מחלת לב איסכמית.', dc:[['0.3מג'],['sc','תתעור','סצ']],
+ pc:[['9מל','4מל'],['3מל','1.5מל']], prep:'1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין → לתת 3 מ"ל; מחט בזווית 45°.', src:'פרוטוקול אסתמה'},
+{c:'נשימה', d:'מגנזיום', ctx:'אסתמה קשה שלא משתפרת. ל"ד 118/76. מה מינון המגנזיום?',
+ f:F.mg, dose:'2 גרם IV בטפטוף במשך 20 דקות (אסור בל"ד סיסטולי מתחת ל-90).', dc:[['2גרם']],
+ pc:[['4מל'],['100מל']], prep:'לשאוב 4 מ"ל ולמהול ב-100 מ"ל D5W או NS.', src:'פרוטוקול אסתמה'},
+{c:'נשימה', d:'אדרנלין', ctx:'עקיצת דבורה: אורטיקריה, נפיחות בשפתיים, צפצופים וקוצר נשימה — אנאפילקסיס. מה הטיפול המיידי?',
+ f:F.adr, dose:'0.3–0.5 מ"ג IM לירך החיצונית; עד 3 מנות בהפרש 10 דקות באתרים שונים.', dc:[['0.3-0.5מג','0.3מג','0.5מג'],['im','שריר']],
+ pc:[['2מל','5מל']], prep:'לשאוב 1 מ"ל למזרק 5 מ"ל + 2 מ"ל סליין.', src:'פרוטוקול אנאפילקסיס'},
+{c:'נשימה', d:'אדרנלין', ctx:'אנאפילקסיס קשה: ל"ד 78/40 ואין תגובה לאדרנלין IM. מה המינון הוורידי?',
+ f:F.adr, dose:'50–100 מק"ג IV בבולוס מהיר, כל 5–10 דקות.', dc:[['50-100מקג','50מקג','100מקג']],
+ pc:[['9מל','10מל'],['100מקג']], prep:'1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין → 100 מק"ג/מ"ל.', src:'פרוטוקול אנאפילקסיס'},
+/* ---- לב וכלי דם ---- */
+{c:'לב וכלי דם', d:'ניטרטים (איזוקט / ניטרולינגואל)', ctx:'בצקת ריאות: חרחורים דו-צדדיים, ל"ד 175/95. מה המתן התת-לשוני?',
+ f:F.nit, dose:'לחיצה (פאף) אחת מתחת ללשון; עד 3 מנות בהפרש 3–5 דקות (רק בל"ד מעל 100).', dc:[['לחיצה','פאף','התזה','ריסוס']],
+ pc:[['אוויר','אויר'],['לד','לחץ']], prep:'לחיצה ראשונה לאוויר החדר; ל"ד לפני ואחרי כל מנה.', src:'פרוטוקול בצקת ריאות'},
+{c:'לב וכלי דם', d:'איזוקט IV', ctx:'בצקת ריאות קשה — עוברים לאיזוקט בטפטוף. מה טווח המינון?',
+ f:F.iso, dose:'20–200 מק"ג/דקה בטפטוף, במינונים עולים עד שיפור. (חלופה: הזלפה 1–2 מ"ג כל 5–10 דקות במיהול 50%).', dc:[['20-200מקג','20מקג','200מקג']],
+ pc:[['2מל'],['100מל']], prep:'לשאוב 2 מ"ל לשקית 100 מ"ל סליין.', src:'פרוטוקול בצקת ריאות'},
+{c:'לב וכלי דם', d:'פוסיד', ctx:'בצקת ריאות, מטופל 80 ק"ג שלא נוטל פוסיד קבוע. מה המינון?',
+ f:F.fus, dose:'1 מ"ג/ק"ג IV (כאן: 80 מ"ג); מקסימום 120 מ"ג. בנוטלים קבוע — להכפיל את המינון היומי.', dc:[['1מג','80מג'],['קג','80']],
+ pc:null, prep:'לשאוב למזרק את המינון הדרוש.', src:'פרוטוקול בצקת ריאות'},
+{c:'לב וכלי דם', d:'אספירין', ctx:'גבר בן 55 עם לחץ בחזה והזעה. אק"ג: עליות ST. מה מינון האספירין ואיך נותנים?',
+ f:F.asp, dose:'160–325 מ"ג בלעיסה.', dc:[['160-325','160','300','325'],['לעיס']],
+ pc:null, prep:'לעיסה, לא בליעה — לספיגה מהירה.', src:'פרוטוקול ACS'},
+{c:'לב וכלי דם', d:'מורפיום', ctx:'ACS: הכאב לא הגיב ל-3 מנות ניטרטים. המטופל שוקל 90 ק"ג, ל"ד 135/85. מה מינון המורפיום?',
+ f:F.mor, dose:'0.05 מ"ג/ק"ג IV (כאן: 4.5 מ"ג); מקסימום 5 מ"ג; מנה חוזרת אחרי 10 דקות. מעל גיל 75 / COPD — 2/3 מנה.', dc:[['0.05מג','4.5מג']],
+ pc:[['9מל','10מל'],['איטי']], prep:'1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין; בולוס איטי.', src:'פרוטוקול ACS'},
+{c:'לב וכלי דם', d:'הפרין', ctx:'STEMI מאובחן באק"ג, אין התוויות נגד. מה מינון ההפרין?',
+ f:F.hep, dose:'5,000 יחידות IV.', dc:[['5000']],
+ pc:[['2.5מל','1מל']], prep:'לשאוב 1 מ"ל למזרק 2.5 מ"ל.', src:'פרוטוקול ACS / ROSC'},
+{c:'לב וכלי דם', d:'דופמין', ctx:'הלם קרדיוגני: ל"ד 75/40 שלא הגיב לנוזלים. מה מינון הדופמין?',
+ f:F.dopa, dose:'5–20 מק"ג/ק"ג/דקה IV בטפטוף; יעד ל"ד סיסטולי 90 במינון הנמוך ביותר.', dc:[['5-20מקג','5מקג','20מקג'],['קג']],
+ pc:[['2אמפ','400מג'],['500מל']], prep:'2 אמפולות (400 מ"ג) לשקית 500 מ"ל סליין → 800 מק"ג/מ"ל.', src:'ROSC / בצקת ריאות / ברדיקרדיה ועוד'},
+{c:'לב וכלי דם', d:'קפטופריל', ctx:'ידוע יל"ד כרוני, כעת 205/125 עם כאב ראש, ללא פגיעת איברי מטרה. מה תיתן?',
+ f:F.cap, dose:'12.5 מ"ג בהמסה מתחת ללשון (SL); מנה חוזרת אחרי 20 דקות בהיעדר שיפור. יעד: ירידה של 25% תוך 30–60 דקות.', dc:[['12.5מג']],
+ pc:[['לשון','המסה']], prep:'חצי טבליה של 25 מ"ג מתחת ללשון.', src:'פרוטוקול יתר לחץ דם ממאיר'},
+/* ---- נוירולוגיה והכרה ---- */
+{c:'נוירולוגיה והכרה', d:'דורמיקום', ctx:'מטופל מפרכס כבר 6 דקות (סטטוס). יש גישה ורידית. מה המינון?',
+ f:F.dorm, dose:'IV: 2.5–5 מ"ג (IM: 5 מ"ג, IN: 10 מ"ג עם התקן); מנה חוזרת אחרי 5–10 דקות אם הפרכוס נמשך.', dc:[['2.5-5מג','2.5מג','5מג']],
+ pc:[['4מל']], prep:'לשאוב 1 מ"ל + 4 מ"ל סליין → 1 מ"ג/מ"ל.', src:'פרוטוקול פרכוסים'},
+{c:'נוירולוגיה והכרה', d:'דורמיקום', ctx:'אותו מטופל מפרכס אך אין גישה ורידית. מה המינון באף (IN)?',
+ f:F.dorm, dose:'10 מ"ג IN עם התקן (IM: 5 מ"ג).', dc:[['10מג']],
+ pc:[['התקן','נזאל']], prep:'שאיבה למזרק עם התקן נזאלי.', src:'פרוטוקול פרכוסים'},
+{c:'נוירולוגיה והכרה', d:'גלוקוז', ctx:'מטופל מעורפל, סוכר 42 מ"ג%. יש וריד. מה תיתן?',
+ f:F.glu, dose:'20 גרם IV/IO במיהול 25%.', dc:[['20גרם']],
+ pc:[['10מל'],['25%','20מל']], prep:'לשאוב 10 מ"ל (50%) למזרק 20 מ"ל + 10 מ"ל סליין → 25%.', src:'שינויים במצב ההכרה / פרכוסים'},
+{c:'נוירולוגיה והכרה', d:'גלוקוג\'ל', ctx:'סוכרתי בהכרה מלאה ומשתף פעולה, סוכר 55. אין גישה ורידית. מה תיתן?',
+ f:F.gel, dose:'שפורפרת מלאה PO — רק למטופל בהכרה שמשתף פעולה.', dc:[['שפורפרת','שפופרת','מלאה']],
+ pc:[['חניכ','מריח']], prep:'מריחה על צידי החניכיים.', src:'שינויים במצב ההכרה'},
+{c:'נוירולוגיה והכרה', d:'נרקאן', ctx:'צעיר מחוסר הכרה, נשימות 6 בדקה, אישונים מוצרים, סימני הזרקה. מה המינון והדגש במתן?',
+ f:F.nar, dose:'0.4 מ"ג IV בהזרקה איטית; מנות חוזרות כל 5–10 דקות עד שיפור בנשימה ובהכרה. (IN: 2 מ"ג במנות של 0.4 מ"ג).', dc:[['0.4מג']],
+ pc:[['10מל'],['איטי','לאט']], prep:'אמפולה מהולה במזרק 10 מ"ל — להזריק באיטיות!', src:'שינויים במצב ההכרה'},
+{c:'נוירולוגיה והכרה', d:'מגנזיום', ctx:'הריון שבוע 34, ל"ד 165/110, פרכוס Grand Mal — אקלמפסיה. מה מינון המגנזיום?',
+ f:F.mg, dose:'6 גרם IV במיהול 10%, במשך 15–20 דקות.', dc:[['6גרם']],
+ pc:[['12מל'],['100מל']], prep:'לשאוב 12 מ"ל ולמהול ב-100 מ"ל D5W או NS; ניטור ל"ד, דופק ונשימה.', src:'פרוטוקול אקלמפסיה'},
+/* ---- סדציה ואינטובציה ---- */
+{c:'סדציה ואינטובציה', d:'דורמיקום', ctx:'הפסקת נשימה מאיימת — נדרשת סדציה לאינטובציה. ל"ד 130/80, משקל 70 ק"ג. מה מינון ההשריה?',
+ f:F.dorm, dose:'0.1–0.2 מ"ג/ק"ג IV/IO (כאן: 7–14 מ"ג, מקסימום 10 מ"ג); מנה נוספת אחרי 2–3 דקות; המשך סדציה 2.5–5 מ"ג כל 15–20 דקות.', dc:[['0.1-0.2מג','0.2מג','0.1מג'],['קג']],
+ pc:[['4מל']], prep:'לשאוב 1 מ"ל + 4 מ"ל סליין → 1 מ"ג/מ"ל. זהירות בל"ד נמוך!', src:'הפסקת נשימה מאיימת'},
+{c:'סדציה ואינטובציה', d:'אטומידאט', ctx:'סדציה לאינטובציה במטופל 80 ק"ג. בחרת אטומידאט. מה המינון והמקסימום?',
+ f:F.eto, dose:'0.2–0.3 מ"ג/ק"ג IV/IO חד-פעמי (כאן: 16–24 מ"ג); מקסימום 60 מ"ג / 3 אמפולות.', dc:[['0.2-0.3מג','0.3מג','0.2מג'],['קג']],
+ pc:[['איטי','30-60'],['נער','וריד']], prep:'לנער לפני שאיבה; בולוס איטי 30–60 שניות לווריד גדול.', src:'הפסקת נשימה מאיימת'},
+{c:'סדציה ואינטובציה', d:'קטאמין', ctx:'נפגע טראומה עם ל"ד 85/60 שזקוק לאינטובציה — תרופת הבחירה. מה המינון הוורידי?',
+ f:F.ket, dose:'2–3 מ"ג/ק"ג IV/IO; מנה חוזרת 0.5 מ"ג/ק"ג אחרי 10–15 דקות.', dc:[['2-3מג','2מג','3מג'],['קג']],
+ pc:[['4מל'],['10מל','20מג']], prep:'לשאוב 4 מ"ל למזרק 10 מ"ל + סליין → 20 מ"ג/מ"ל (80 ק"ג = 8 מ"ל).', src:'הפסקת נשימה מאיימת'},
+{c:'סדציה ואינטובציה', d:'קטאמין', ctx:'אותו נפגע — אך אין גישה ורידית. מה המינון בשריר (IM)?',
+ f:F.ket, dose:'4–5 מ"ג/ק"ג IM; מנה חוזרת IM 2–4 מ"ג/ק"ג.', dc:[['4-5מג','4מג','5מג'],['קג']],
+ pc:null, prep:'שקול אטרופין 0.01 מ"ג/ק"ג נגד ריור.', src:'הפסקת נשימה מאיימת'},
+{c:'סדציה ואינטובציה', d:'אטרופין', ctx:'נתת קטאמין והמטופל מרייר באופן שמפריע. מה מינון האטרופין?',
+ f:F.atro, dose:'0.01 מ"ג/ק"ג IV (מינימום 0.1 מ"ג, מקסימום 0.5 מ"ג). לא רוטיני.', dc:[['0.01מג']],
+ pc:null, prep:'שאיבה לפי המינון.', src:'הפסקת נשימה מאיימת'},
+/* ---- כאב ---- */
+{c:'כאב', d:'אקמול', ctx:'שבר בקרסול, כאב 5/10 (בינוני), יש וריד. מה מינון האקמול הוורידי?',
+ f:F.aca, dose:'500–1000 מ"ג IV במשך 10 דקות. (כאב קל: 500–1000 מ"ג PO).', dc:[['500-1000','1000מג','1גרם','500מג']],
+ pc:[['סט','עירוי'],['10דק','10ד']], prep:'חיבור האמפולה (1 גרם / 100 מ"ל) לסט עירוי.', src:'פרוטוקול טיפול בכאב'},
+{c:'כאב', d:'אופטלגין', ctx:'כאב בינוני ממקור בטני. מה מינון האופטלגין?',
+ f:F.opt, dose:'1000 מ"ג IV.', dc:[['1000מג','1גרם']],
+ pc:[['100מל']], prep:'למהול ב-100 מ"ל סליין; הזלפה 5–10 דקות.', src:'פרוטוקול טיפול בכאב'},
+{c:'כאב', d:'טרמדקס', ctx:'כאב בינוני בגבר בן 45. מה מינון הטרמדקס? ומה משנים בבן 75?',
+ f:F.tra, dose:'50–100 מ"ג IV; מעל גיל 70 — חצי מנה (25–50 מ"ג); בכאב חזק תוספות עד מקסימום 250 מ"ג.', dc:[['50-100מג','100מג','50מג']],
+ pc:[['100מל']], prep:'למהול אמפולה בשקית 100 מ"ל סליין/D5W; מתן 2–3 דקות.', src:'פרוטוקול טיפול בכאב'},
+{c:'כאב', d:'מורפיום', ctx:'ריסוק בכף רגל, כאב 9/10, משקל 70 ק"ג, ל"ד תקין. מה מינון המורפיום?',
+ f:F.mor, dose:'0.05–0.1 מ"ג/ק"ג IV (כאן: 3.5–7 מ"ג); מנה חוזרת פעם אחת אחרי 5–10 דקות; 2/3 מנה מעל גיל 75 / COPD.', dc:[['0.05-0.1מג','0.1מג','0.05מג'],['קג']],
+ pc:[['10מל']], prep:'למהול במזרק 10 מ"ל עם סליין; מתן 1–2 דקות.', src:'פרוטוקול טיפול בכאב'},
+{c:'כאב', d:'קטאמין', ctx:'כאב חזק בנפגע עם ל"ד גבולי — בחרת קטאמין במינון אנלגטי. מה המינון?',
+ f:F.ket, dose:'0.2 מ"ג/ק"ג IV. שקול דורמיקום בהמשך.', dc:[['0.2מג'],['קג']],
+ pc:null, prep:'מתן IV.', src:'פרוטוקול טיפול בכאב'},
+{c:'כאב', d:'דורמיקום', ctx:'אחרי קטאמין לכאב, כדי למנוע תופעות התעוררות. מה המינון?',
+ f:F.dorm, dose:'1–2.5 מ"ג IV.', dc:[['1-2.5מג','2.5מג','1מג']],
+ pc:null, prep:'מדידת ל"ד לאחר המתן. התוויות נגד: ל"ד נמוך והיפופרפוזיה.', src:'פרוטוקול טיפול בכאב'},
+{c:'כאב', d:'פראמין', ctx:'מטופל עם כאב חזק ובחילות לפני מתן מורפיום. מה מינון הפראמין?',
+ f:F.pra, dose:'10 מ"ג IV.', dc:[['10מג']],
+ pc:[['10מל']], prep:'למהול במזרק 10 מ"ל עם סליין; הזלפה במשך 3 דקות (ב-ACS: בולוס איטי 30–60 שניות).', src:'טיפול בכאב / ACS'},
+/* ---- טראומה והרעלות ---- */
+{c:'טראומה והרעלות', d:'הקסקפרון', ctx:'תאונת דרכים, דימום בטני בלתי נשלט, 40 דקות מהפציעה. מה תיתן ובאיזה מינון?',
+ f:F.hex, dose:'1 גרם IV (פדיאטרי: 15 מ"ג/ק"ג, מקסימום 1 גרם). יעיל עד 3 שעות; לא מעכב פינוי.', dc:[['1גרם','1000מג']],
+ pc:[['100מל'],['10דק','10ד']], prep:'לשאוב 2 אמפולות לתוך 100 מ"ל סליין; טפטוף 10 דקות.', src:'הגישה הכללית לנפגע טראומה'},
+{c:'טראומה והרעלות', d:'אטרופין', ctx:'ריסוס חממות: מטופל "רטוב ומתכווץ" — ריור מסיבי, קוצר נשימה חריף, פרכוסים. הרעלת זרחנים קשה. מה מינון האטרופין?',
+ f:F.atro, dose:'2–4 מ"ג IV/IM/IO (חומרה קשה); מנות חוזרות עד אטרופיניזציה — אין מינון מקסימלי בזרחנים אורגניים. (בינונית: 1–2 מ"ג).', dc:[['2-4מג','4מג','2מג']],
+ pc:[['2.5מל']], prep:'לשאוב למזרק 2.5 מ"ל לפי המינון; היעד — הפסקת ריור והפרשות.', src:'הרעלות כולל זרחנים אורגניים'},
+{c:'טראומה והרעלות', d:'ונטולין', ctx:'לכוד שחולץ אחרי 3 שעות — תסמונת מעיכה עם שינויי אק"ג של היפרקלמיה. מה מינון הוונטולין ולמה הוא עוזר כאן?',
+ f:F.ven, dose:'5 מ"ג באינהלציה — בטא-2 מכניס אשלגן לתאים ומוריד את רמתו בדם.', dc:[['5מג']],
+ pc:null, prep:'מהול; אינהלציה עם חמצן 6 ליטר/דקה.', src:'תסמונת מעיכה (מודולת התרופות)'},
+{c:'טראומה והרעלות', d:'דורמיקום', ctx:'הכשת נחש עם פרכוסים. מה מינון הדורמיקום?',
+ f:F.dorm, dose:'2.5–5 מ"ג IV.', dc:[['2.5-5מג','2.5מג','5מג']],
+ pc:null, prep:'מדידת ל"ד לאחר המתן.', src:'פגיעות בע"ח ארסיים'},
+];
+
+/* ================= לוגיקה ================= */
+function normalize(s){
+  s=(s||'').toString();
+  s=s.replace(/[,‎‏]/g,'').replace(/["'״׳`]/g,'').replace(/[–—−]/g,'-').toLowerCase();
+  s=s.replace(/mcg|µg|mkg/g,'מקג');
+  s=s.replace(/mg/g,'מג');
+  s=s.replace(/ml|cc|סמק/g,'מל');
+  s=s.replace(/kg/g,'קג');
+  s=s.replace(/meq/g,'מאק');
+  s=s.replace(/(\d)\s*(gr|g)(?![a-zא-ת])/g,'$1גרם');
+  s=s.replace(/גר\b/g,'גרם');
+  s=s.replace(/\s+/g,'');
+  return s;
+}
+function tokenIn(ans, tok){
+  tok=normalize(tok);
+  let idx=ans.indexOf(tok);
+  while(idx!==-1){
+    const before=idx>0?ans[idx-1]:'';
+    const after=idx+tok.length<ans.length?ans[idx+tok.length]:'';
+    const startsDigit=/[\d]/.test(tok[0]);
+    const endsDigit=/[\d]/.test(tok[tok.length-1]);
+    const badBefore=startsDigit && /[\d.]/.test(before);
+    const badAfter=endsDigit && /[\d]/.test(after);
+    if(!badBefore && !badAfter) return true;
+    idx=ans.indexOf(tok, idx+1);
+  }
+  return false;
+}
+function checkGroups(answer, groups){
+  const a=normalize(answer);
+  if(!a) return false;
+  return groups.every(g=>g.some(t=>tokenIn(a,t)));
+}
+function maskNums(s){ return s.replace(/[\d.,]+(–[\d.,]+)?/g,'▢'); }
+
+/* ================= מצב משחק ================= */
+let pool=[], idx=0, attempts=0, firstTry=0, streak=0, bestStreak=0, revealed=false, solvedNoReveal=0;
+const cats=[...new Set(QUESTIONS.map(q=>q.c))];
+const chipBox=document.getElementById('catChips');
+const selected=new Set(cats);
+cats.forEach(c=>{
+  const el=document.createElement('div');
+  el.className='chip on'; el.textContent=c;
+  el.onclick=()=>{ el.classList.toggle('on'); el.classList.contains('on')?selected.add(c):selected.delete(c); };
+  chipBox.appendChild(el);
+});
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function startGame(){
+  pool=shuffle(QUESTIONS.filter(q=>selected.has(q.c)));
+  if(!pool.length){ alert('בחר לפחות קטגוריה אחת'); return; }
+  idx=0; firstTry=0; streak=0; bestStreak=0; solvedNoReveal=0;
+  document.getElementById('startCard').style.display='none';
+  document.getElementById('qCard').style.display='block';
+  document.getElementById('scorebar').style.display='flex';
+  document.getElementById('progressWrap').style.display='block';
+  loadQ();
+}
+
+function loadQ(){
+  const q=pool[idx]; attempts=0; revealed=false;
+  document.getElementById('qCounter').textContent='שאלה '+(idx+1)+' מתוך '+pool.length;
+  document.getElementById('qAttempts').textContent='';
+  document.getElementById('qDrug').textContent='💊 '+q.d;
+  document.getElementById('qCat').textContent=q.c;
+  document.getElementById('qCtx').textContent=q.ctx;
+  document.getElementById('formField').style.display=q.f?'block':'none';
+  document.getElementById('prepField').style.display=q.pc?'block':'none';
+  ['formInput','doseInput','prepInput'].forEach(id=>{const el=document.getElementById(id); el.value=''; el.disabled=false;});
+  ['formWrap','doseWrap','prepWrap'].forEach(id=>document.getElementById(id).classList.remove('ok','bad'));
+  document.getElementById('formMark').textContent=''; document.getElementById('doseMark').textContent=''; document.getElementById('prepMark').textContent='';
+  const fb=document.getElementById('feedback'); fb.className='feedback'; fb.textContent='';
+  const ab=document.getElementById('answerBox'); ab.className='answerbox'; ab.innerHTML='';
+  document.getElementById('checkBtn').style.display='inline-block';
+  document.getElementById('hintBtn').style.display='inline-block';
+  document.getElementById('revealBtn').style.display='inline-block';
+  document.getElementById('nextBtn').style.display='none';
+  updateStats();
+  (q.f?document.getElementById('formInput'):document.getElementById('doseInput')).focus();
+}
+
+function updateStats(){
+  document.getElementById('sQ').textContent=(idx+1)+'/'+pool.length;
+  document.getElementById('sFirst').textContent=firstTry;
+  document.getElementById('sStreak').textContent=streak;
+  document.getElementById('progressBar').style.width=(idx/pool.length*100)+'%';
+}
+
+function checkAnswer(){
+  const q=pool[idx]; attempts++;
+  const formOK = q.f ? checkGroups(document.getElementById('formInput').value, q.f.c) : true;
+  const doseOK = checkGroups(document.getElementById('doseInput').value, q.dc);
+  const prepOK = q.pc ? checkGroups(document.getElementById('prepInput').value, q.pc) : true;
+  if(q.f){
+    const w=document.getElementById('formWrap');
+    w.classList.remove('ok','bad'); w.classList.add(formOK?'ok':'bad');
+    document.getElementById('formMark').textContent=formOK?'✅':'❌';
+  }
+  const dw=document.getElementById('doseWrap');
+  dw.classList.remove('ok','bad'); dw.classList.add(doseOK?'ok':'bad');
+  document.getElementById('doseMark').textContent=doseOK?'✅':'❌';
+  if(q.pc){
+    const pw=document.getElementById('prepWrap');
+    pw.classList.remove('ok','bad'); pw.classList.add(prepOK?'ok':'bad');
+    document.getElementById('prepMark').textContent=prepOK?'✅':'❌';
+  }
+  document.getElementById('qAttempts').textContent='ניסיונות: '+attempts;
+  const fb=document.getElementById('feedback');
+  if(formOK && doseOK && prepOK){
+    if(attempts===1 && !revealed){ firstTry++; }
+    if(!revealed){ streak++; solvedNoReveal++; } else { streak=0; }
+    bestStreak=Math.max(bestStreak,streak);
+    fb.className='feedback show good';
+    fb.innerHTML = (attempts===1?'🎯 מדויק מהניסיון הראשון! ':'💪 הגעת לתשובה הנכונה! ') + 'התשובה המלאה מוצגת למטה.';
+    showAnswer(false);
+    finishQ();
+  } else {
+    streak=0;
+    fb.className='feedback show err';
+    const parts=[];
+    if(q.f && !formOK) parts.push('צורת ההופעה');
+    if(!doseOK) parts.push('המינון');
+    if(q.pc && !prepOK) parts.push('ההכנה');
+    fb.innerHTML='❌ עדיין לא מדויק: '+parts.join(', ')+'. נסה שוב, בקש רמז או הצג את התשובה.';
+  }
+  updateStats();
+}
+
+function showHint(){
+  const q=pool[idx];
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show hint';
+  let h='💡 <b>רמז — מבנה התשובה (המספרים הוסתרו):</b><br>';
+  if(q.f) h+='צורת הופעה: '+maskNums(q.f.a)+'<br>';
+  h+='מינון: '+maskNums(q.dose);
+  if(q.pc && q.prep) h+='<br>הכנה: '+maskNums(q.prep);
+  fb.innerHTML=h;
+}
+
+function reveal(){
+  revealed=true; streak=0;
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show hint';
+  fb.innerHTML='👁 התשובה נחשפה — שווה לחזור על השאלה הזו בסבב הבא.';
+  showAnswer(true);
+  finishQ();
+  updateStats();
+}
+
+function showAnswer(){
+  const q=pool[idx];
+  const ab=document.getElementById('answerBox');
+  ab.className='answerbox show';
+  let html='';
+  if(q.f) html+='<b>💊 צורת הופעה:</b> '+q.f.a+'<br>';
+  html+='<b>🧪 מינון:</b> '+q.dose+'<br>';
+  if(q.prep) html+='<b>🧰 הכנה:</b> '+q.prep+'<br>';
+  html+='<div class="src">📖 מקור: '+q.src+'</div>';
+  ab.innerHTML=html;
+}
+
+function finishQ(){
+  document.getElementById('checkBtn').style.display='none';
+  document.getElementById('hintBtn').style.display='none';
+  document.getElementById('revealBtn').style.display='none';
+  document.getElementById('nextBtn').style.display='inline-block';
+  document.getElementById('formInput').disabled=true;
+  document.getElementById('doseInput').disabled=true;
+  document.getElementById('prepInput').disabled=true;
+  document.getElementById('nextBtn').focus();
+}
+
+function nextQ(){
+  idx++;
+  if(idx>=pool.length){ endGame(); return; }
+  loadQ();
+}
+
+function endGame(){
+  document.getElementById('qCard').style.display='none';
+  document.getElementById('progressBar').style.width='100%';
+  const end=document.getElementById('endCard');
+  end.style.display='block';
+  const pct=Math.round(firstTry/pool.length*100);
+  let emoji='🏆', title='פראמדיק על!', msg='שליטה מרשימה במודולת התרופות. ממשיכים לתרגל עד לשלמות.';
+  if(pct<50){ emoji='📚'; title='ממשיכים ללמוד'; msg='שווה לחזור לאוגדן ולתרגל שוב — הדרך לשליטה עוברת בחזרות.'; }
+  else if(pct<80){ emoji='💪'; title='כל הכבוד!'; msg='בסיס טוב מאוד — עוד כמה סבבים ותהיה שם.'; }
+  document.getElementById('endEmoji').textContent=emoji;
+  document.getElementById('endTitle').textContent=title;
+  document.getElementById('endStats').textContent=
+    'נכון בניסיון ראשון: '+firstTry+' מתוך '+pool.length+' ('+pct+'%) · הרצף הטוב ביותר: '+bestStreak;
+  document.getElementById('endMsg').textContent=msg;
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(document.getElementById('qCard').style.display!=='none'){
+      if(document.getElementById('nextBtn').style.display!=='none') nextQ();
+      else checkAnswer();
+    }
+  }
+});
+</script>
+</body>
+</html>
