@@ -68,6 +68,11 @@
   .branchcol .slot{font-size:.82rem; padding:8px 10px;}
   .branchhead{text-align:center; color:var(--accent2); font-size:.8rem; font-weight:600; margin-bottom:6px;}
   .arlbl{color:var(--warn); font-weight:600;}
+  .sidebox{margin-top:6px; margin-inline-start:34px; border:1.5px dashed var(--line); border-radius:12px;
+    padding:8px; opacity:.45; display:flex; flex-direction:column;}
+  .sidebox.on{opacity:1; border-color:rgba(255,200,87,.55);}
+  .sidebox .slot{font-size:.82rem; padding:8px 10px;}
+  .sideboxhead{text-align:center; color:var(--warn); font-size:.8rem; font-weight:600; margin-bottom:6px;}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(77,163,255,.35)}50%{box-shadow:0 0 0 6px rgba(77,163,255,0)}}
   .arrow{text-align:center; color:var(--line); font-size:.9rem; line-height:1.2; margin:2px 0;}
   .drugpanel{
@@ -251,13 +256,13 @@ const PROTOCOLS=[
                  'מנה 1: 300 מ"ג בפוש; מנה 2: 150 מ"ג',[['300מג'],['150מג']],
                  'לשאוב למזרק 20 מ"ל ולהשלים עם סליין 0.9%',[['20מל']])),
                A('שקול מגנזיום ב-TdP, חפש וטפל בגורמים הפיכים (H&T)'),
-               QN('ROSC?', [E('עבור לפרוטוקול ROSC')], [E('המשך סבבים: שוק ← החייאה ← תרופות')]),
+               QN('ROSC?', [A('עבור לפרוטוקול ROSC')], [A('המשך סבבים: שוק ← החייאה ← תרופות')]),
              ],
-             [E('בדוק דופק — ROSC? עבור לפרוטוקול המתאים')]),
+             [A('בדוק דופק — ROSC? עבור לפרוטוקול המתאים')]),
          ],
-         [E('בדוק דופק / עבור לפרוטוקול Asystole-PEA')]),
+         [A('בדוק דופק / עבור לפרוטוקול Asystole-PEA')]),
      ],
-     [E('עבור לפרוטוקול Asystole / PEA')]),
+     [A('עבור לפרוטוקול Asystole / PEA')]),
  ]},
 
  {key:'pea', name:'💤 דום לב — Asystole / PEA', sub:'אדרנלין מוקדם וגורמים הפיכים', distract:['תן שוק חשמלי 200 ג\'אול','תן אמיודארון 300 מ"ג בפוש'], flow:[
@@ -265,13 +270,13 @@ const PROTOCOLS=[
    A('בצע 2 דקות החייאה והשג גישה ורידית/לשדית'),
    D('תן אדרנלין מוקדם ככל האפשר, וכל 3–5 דקות', ADR_ARREST()),
    QN('התוויה למתן שוק חשמלי?',
-     [E('עבור לפרוטוקול VF / pVT')],
+     [A('עבור לפרוטוקול VF / pVT')],
      [ A('שקול נתיב אוויר מתקדם והמשך סבבי החייאה של 2 דקות'),
        A('חפש וטפל בגורמים הפיכים (H&T)'),
        D('בהתוויה (חמצת, היפרקלמיה, הרעלה, אס"ק כליות) — תן ביקרבונט', DR('סודיום ביקרבונט','בקבוק 8.4% / 100 מ"ל (מאק"ו)',[['8.4'],['100מל']],
          '1 מאק"ו לק"ג IV',[['1מאק','1meq'],['קג']],
          'חיבור סט נוזלים לבקבוקון והזלפה מהירה',[['סט','בקבוק'],['מהיר']])),
-       QN('ROSC?', [E('עבור לפרוטוקול ROSC')], [E('שקול מעבר לפרוטוקול הפסקת החייאה')]),
+       QN('ROSC?', [A('עבור לפרוטוקול ROSC')], [A('שקול מעבר לפרוטוקול הפסקת החייאה')]),
      ]),
  ]},
 
@@ -288,7 +293,7 @@ const PROTOCOLS=[
        D('שקול ניטרטים IV (איזוקט בטפטוף)', DR('איזוקט IV','10 מ"ג / 10 מ"ל',[['10מג'],['10מל']],
          '20–200 מק"ג/דקה במינון עולה עד שיפור',[['20-200מקג','20מקג','200מקג']],
          'לשאוב 2 מ"ל לשקית 100 מ"ל סליין',[['2מל'],['100מל']])),
-       QN('שיפור?', [E('פנה בדחיפות תוך ניטור, מדדים כל 5–10 דקות')], [E('שקול מעבר לפרוטוקול הפסקת נשימה מאיימת')]),
+       QN('שיפור?', [A('פנה בדחיפות תוך ניטור, מדדים כל 5–10 דקות')], [A('שקול מעבר לפרוטוקול הפסקת נשימה מאיימת')]),
      ],
      [ A('הערך סימני הלם קרדיוגני — תן פוסיד IV ושקול דופמין 5–20 מק"ג/ק"ג/דקה'),
        E('פנה בדחיפות תוך ניטור'),
@@ -308,7 +313,7 @@ const PROTOCOLS=[
        D('שקול מגנזיום IV (אסור בל"ד מתחת ל-90)', DR('מגנזיום','אמפולה 5 גרם / 10 מ"ל (50%)',[['5גרם'],['10מל','50%']],
          '2 גרם IV בטפטוף 20 דקות',[['2גרם']],
          'לשאוב 4 מ"ל ולמהול ב-100 מ"ל D5W או NS',[['4מל'],['100מל']])),
-       QN('שיפור?', [E('פנה בדחיפות תוך ניטור')], [E('שקול הפסקת נשימה מאיימת / CPAP במשנה זהירות')]),
+       QN('שיפור?', [A('פנה בדחיפות תוך ניטור')], [A('שקול הפסקת נשימה מאיימת / CPAP במשנה זהירות')]),
      ],
      [ A('שקול אינהלציות ונטולין + אירוונט חוזרות כל 20 דקות'),
        E('פנה בדחיפות תוך ניטור'),
@@ -326,7 +331,7 @@ const PROTOCOLS=[
        D('תן סולומדרול IV', D_SOLU()),
        A('תן נוזלים בקצב 2–3 ליטר/שעה'),
        QN('שיפור?',
-         [E('פנה בדחיפות תוך ניטור')],
+         [A('פנה בדחיפות תוך ניטור')],
          [ D('תן אדרנלין IV', DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
              '50–100 מק"ג בבולוס כל 5–10 דקות',[['50-100מקג','50מקג','100מקג']],
              '1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין → 100 מק"ג/מ"ל',[['9מל','10מל'],['100מקג']])),
@@ -357,9 +362,9 @@ const PROTOCOLS=[
              'לשאוב 12 מ"ל ולמהול ב-100 מ"ל D5W או NS',[['12מל'],['100מל']])),
            E('פנה בדחיפות בהשכבה על צד שמאל'),
          ],
-         [E('פנה בדחיפות תוך ניטור, מדדים כל 5–10 דקות')]),
+         [A('פנה בדחיפות תוך ניטור, מדדים כל 5–10 דקות')]),
      ],
-     [E('המשך ניטור, אנמנזה ופינוי')]),
+     [A('המשך ניטור, אנמנזה ופינוי')]),
  ]},
 
  {key:'tachy', name:'💓 טכיקרדיה', sub:'ואגלי, אדנוזין, איקקור', distract:['תן אטרופין 1 מ"ג IV','תן שוק לא מסונכרן 200 ג\'אול'], flow:[
@@ -372,7 +377,7 @@ const PROTOCOLS=[
              'מנה 1: 6 מ"ג; מנה 2: 12 מ"ג (המתן 1–2 דקות)',[['6מג'],['12מג']],
              'פוש מהיר + שטיפה מיידית 20 מ"ל סליין (מחבר T)',[['פוש','מהיר'],['20מל']])),
            QN('הקצב נשבר?',
-             [E('המשך ניטור ופינוי')],
+             [A('המשך ניטור ופינוי')],
              [ D('שקול איקקור', DR('איקקור (וראפמיל)','אמפולה 5 מ"ג / 2 מ"ל',[['5מג'],['2מל']],
                  '2.5–5 מ"ג במשך 2 דקות; חוזרות 5 מ"ג כל 15 דקות; מקס\' 30 מ"ג',[['2.5-5מג','2.5מג','5מג']],
                  'לשאוב 2 מ"ל למזרק 5 מ"ל + 3 מ"ל סליין; ניטור ל"ד',[['3מל','5מל']])),
@@ -382,9 +387,9 @@ const PROTOCOLS=[
                E('פנה בדחיפות תוך ניטור'),
              ]),
          ],
-         [E('בצע אק"ג; שקול תרופות אנטי-אריתמיות וייעוץ מוקד רפואי')]),
+         [A('בצע אק"ג; שקול תרופות אנטי-אריתמיות וייעוץ מוקד רפואי')]),
      ],
-     [E('בצע היפוך חשמלי מסונכרן (+שקול סדציה) ופנה בדחיפות')]),
+     [A('בצע היפוך חשמלי מסונכרן (+שקול סדציה) ופנה בדחיפות')]),
  ]},
 
  {key:'brady', name:'🐢 ברדיקרדיה', sub:'אטרופין, קיצוב, דריפים', distract:['תן אדנוזין 6 מ"ג בפוש','בצע גירוי ואגלי'], flow:[
@@ -392,12 +397,12 @@ const PROTOCOLS=[
    A('אבטח נתיב אוויר, שקול חמצן או הנשמה'),
    A('חבר מוניטור, בצע אק"ג, השג גישה ורידית'),
    QN('חולה יציב?',
-     [E('המשך ניטור לפי מצב החולה; שקול מדבקות קיצוב STBY')],
+     [A('המשך ניטור לפי מצב החולה; שקול מדבקות קיצוב STBY')],
      [ D('תן אטרופין', DR('אטרופין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל']],
          '1 מ"ג IV כל 3–5 דקות; מקסימום 3 מ"ג',[['1מג'],['3מג']],
          'שאיבה למזרק ומתן בפוש',[['פוש','ישיר']])),
        QN('שיפור?',
-         [E('פנה בדחיפות תוך ניטור')],
+         [A('פנה בדחיפות תוך ניטור')],
          [ A('קיצוב חיצוני (שקול סדציה) ו/או דופמין 5–20 מק"ג/ק"ג/דקה'),
            D('ו/או אדרנלין בטפטוף', DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
              '2–10 מק"ג/דקה IV',[['2-10מקג','2מקג','10מקג']],
@@ -426,13 +431,13 @@ const PROTOCOLS=[
                  'לשאוב 1 מ"ל למזרק 2.5 מ"ל',[['2.5מל','1מל']])),
                E('פנה בדחיפות ליחידת לב; מדדים ואק"ג כל 5 דקות'),
              ],
-             [E('פנה בדחיפות תוך ניטור, מדדים כל 5–10 דקות')]),
+             [A('פנה בדחיפות תוך ניטור, מדדים כל 5–10 דקות')]),
          ],
          [ A('תן נוזלים עד ל"ד סיסטולי 90; שקול דופמין ופראמין בבחילות'),
            E('פנה בדחיפות תוך ניטור'),
          ]),
      ],
-     [E('טפל סימפטומטית לפי התלונות והפרוטוקול המתאים')]),
+     [A('טפל סימפטומטית לפי התלונות והפרוטוקול המתאים')]),
  ]},
 
  {key:'resp', name:'😮‍💨 הפסקת נשימה מאיימת', sub:'סדציה ואינטובציה', distract:['בצע תמרון היימליך','המתן שהמטופל יירדם מעצמו'], flow:[
@@ -506,6 +511,7 @@ function collectPlaceable(list, out){
   return out;
 }
 function branchAllEnds(l){ return l.every(n=>n.end); }
+function hasQuestion(l){ return l.some(n=>!!n.q); }
 
 function renderMenu(){
   const g=document.getElementById('protoGrid'); g.innerHTML='';
@@ -567,6 +573,7 @@ function renderFlow(list, container, isRoot){
     }
     // שאלה
     const yesEnds=branchAllEnds(n.yes), noEnds=branchAllEnds(n.no);
+    const yesHasQ=hasQuestion(n.yes), noHasQ=hasQuestion(n.no);
     if(yesEnds && noEnds){
       const row=document.createElement('div'); row.className='qrow';
       row.appendChild(makeSlot(n));
@@ -582,6 +589,20 @@ function renderFlow(list, container, isRoot){
       ar.innerHTML='<span class="arlbl">'+(yesEnds?'לא':'כן')+'</span> ▼';
       container.appendChild(ar);
       renderFlow(yesEnds?n.no:n.yes, container, false);
+    } else if(yesHasQ!==noHasQ){
+      // ענף אחד ממשיך עם שאלות נוספות (הגזע), השני הוא ענף-צד קצר — קופסה מוזחת
+      container.appendChild(makeSlot(n));
+      const sideList=yesHasQ?n.no:n.yes, sideLbl=yesHasQ?'לא':'כן';
+      const contList=yesHasQ?n.yes:n.no, contLbl=yesHasQ?'כן':'לא';
+      const box=document.createElement('div'); box.className='sidebox'; box.id='sb_'+n.id;
+      const h=document.createElement('div'); h.className='sideboxhead'; h.textContent=sideLbl+' ▼';
+      box.appendChild(h);
+      renderFlow(sideList, box, false);
+      container.appendChild(box);
+      const ar=document.createElement('div'); ar.className='arrow';
+      ar.innerHTML='<span class="arlbl">'+contLbl+'</span> ▼';
+      container.appendChild(ar);
+      renderFlow(contList, container, false);
     } else {
       container.appendChild(makeSlot(n));
       const br=document.createElement('div'); br.className='branches inactive'; br.id='br_'+n.id;
@@ -699,6 +720,8 @@ function placeNode(front, node){
     });
     const br=document.getElementById('br_'+node.id);
     if(br) br.classList.remove('inactive');
+    const sb=document.getElementById('sb_'+node.id);
+    if(sb) sb.classList.add('on');
     addFront(node.yes);
     addFront(node.no);
   }
