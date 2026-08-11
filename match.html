@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משחק ההתאמה — תרופות ALS</title>
+<style>
+  :root{
+    --bg:#0e1a2b; --card:#152840; --card2:#1b3252; --line:#2b4a72;
+    --text:#eaf1fa; --dim:#9db4d0; --accent:#4da3ff; --accent2:#7cc4ff;
+    --ok:#2ecc8f; --bad:#ff6b6b; --warn:#ffc857; --sel:#8f6bff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Segoe UI", Arial, "Noto Sans Hebrew", sans-serif;
+    background:linear-gradient(160deg,#0a1424 0%, #10233c 55%, #0d1b30 100%);
+    color:var(--text); min-height:100vh; direction:rtl;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:24px 16px 60px;}
+  header{text-align:center; margin-bottom:14px;}
+  header h1{font-size:1.7rem; color:var(--accent2);}
+  header p{color:var(--dim); font-size:.9rem; margin-top:4px;}
+  .navlink{display:inline-block; margin-top:8px; color:var(--accent2); font-size:.85rem; text-decoration:none;
+    border:1px solid var(--line); border-radius:999px; padding:5px 14px; background:var(--card);}
+  .navlink:hover{border-color:var(--accent);}
+  .scorebar{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0 18px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 14px; font-size:.85rem; color:var(--dim);}
+  .stat b{color:var(--text); font-size:1rem; margin-inline-start:6px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.35);}
+  .startcard,.endcard{text-align:center;}
+  .startcard h2,.endcard h2{color:var(--accent2); margin-bottom:10px;}
+  .startcard p{color:var(--dim); line-height:1.7; margin-bottom:16px; font-size:.95rem;}
+  .modes{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
+  .mode{border:1.5px solid var(--line); background:var(--card2); color:var(--text); border-radius:14px;
+    padding:14px 18px; cursor:pointer; min-width:150px; transition:.15s;}
+  .mode small{display:block; color:var(--dim); margin-top:4px; font-size:.75rem;}
+  .mode.on{border-color:var(--accent); background:rgba(77,163,255,.12);}
+  button{border:none; border-radius:10px; padding:11px 20px; font-size:.95rem; font-weight:600; cursor:pointer; font-family:inherit; transition:.15s;}
+  .primary{background:var(--accent); color:#06182e;}
+  .primary:hover{background:var(--accent2);}
+  .success{background:var(--ok); color:#03291c;}
+  .roundhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; color:var(--dim); font-size:.85rem;}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .colhead{text-align:center; color:var(--accent2); font-size:.85rem; font-weight:600; margin-bottom:8px;}
+  .items{display:flex; flex-direction:column; gap:8px;}
+  .item{
+    background:var(--card2); border:1.5px solid var(--line); border-radius:12px;
+    padding:10px 12px; cursor:pointer; font-size:.88rem; line-height:1.45; transition:.12s;
+    user-select:none; min-height:44px; display:flex; align-items:center;
+  }
+  .item:hover{border-color:var(--accent);}
+  .item.sel{border-color:var(--sel); background:rgba(143,107,255,.15); box-shadow:0 0 0 1px var(--sel);}
+  .item.done{border-color:var(--ok); background:rgba(46,204,143,.1); color:#bfe9d8; cursor:default; opacity:.75;}
+  .item.wrong{border-color:var(--bad); background:rgba(255,107,107,.12); animation:shake .3s;}
+  .item .tag{margin-inline-start:auto; font-size:.8rem; color:var(--ok); padding-inline-start:8px;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(4px)}75%{transform:translateX(-4px)}}
+  .feedback{margin-top:14px; text-align:center; min-height:24px; font-size:.95rem;}
+  .feedback.good{color:#7ee7c0;}
+  .feedback.err{color:#ffb3b3;}
+  .btns{display:flex; gap:10px; justify-content:center; margin-top:18px;}
+  .endcard .big{font-size:3rem; margin-bottom:10px;}
+  .endcard p{color:var(--dim); margin-bottom:6px;}
+  .disclaimer{text-align:center; color:#5f7591; font-size:.75rem; margin-top:26px; line-height:1.5;}
+  @media(max-width:640px){ .item{font-size:.78rem; padding:8px 10px;} .cols{gap:8px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧩 משחק ההתאמה — תרופות ALS</h1>
+    <p>לפי אוגדן הפרוטוקולים של איחוד הצלה, מהדורת 2023</p>
+    <a class="navlink" href="index.html">💉 למשחק התרחישים</a>
+  </header>
+
+  <div class="scorebar" id="scorebar" style="display:none">
+    <div class="stat">סבב<b id="sRound">1</b></div>
+    <div class="stat">הותאמו<b id="sMatched">0/10</b></div>
+    <div class="stat">טעויות בסבב<b id="sMistakes">0</b></div>
+    <div class="stat">⏱<b id="sTime">0:00</b></div>
+  </div>
+
+  <!-- START -->
+  <div class="card startcard" id="startCard">
+    <h2>מוכנים להתאים?</h2>
+    <p>בכל סבב: 10 תרופות מול 10 תשובות מעורבבות.<br>
+    לוחצים על תרופה ואז על התשובה שלה (או להפך).<br>
+    התאמה נכונה ננעלת בירוק ✓ — טעות נספרת ומנערת את הכרטיסים.</p>
+    <div class="modes" id="modeBox">
+      <div class="mode on" data-mode="form" onclick="pickMode(this)">💊 צורת הופעה<small>איך התרופה מגיעה</small></div>
+      <div class="mode" data-mode="dose" onclick="pickMode(this)">🧪 מינון<small>תרופה + הקשר ← המינון</small></div>
+      <div class="mode" data-mode="mix" onclick="pickMode(this)">🎲 מעורב<small>גם וגם, כל סבב אחר</small></div>
+    </div>
+    <button class="primary" onclick="startGame()">התחל משחק</button>
+  </div>
+
+  <!-- GAME -->
+  <div class="card" id="gameCard" style="display:none">
+    <div class="roundhead"><span id="roundTitle"></span><span id="roundMode"></span></div>
+    <div class="cols">
+      <div>
+        <div class="colhead" id="rightHead">תרופות</div>
+        <div class="items" id="colA"></div>
+      </div>
+      <div>
+        <div class="colhead" id="leftHead">תשובות</div>
+        <div class="items" id="colB"></div>
+      </div>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <div class="btns">
+      <button class="success" id="nextRoundBtn" onclick="nextRound()" style="display:none">סבב הבא ←</button>
+      <button class="primary" id="finishBtn" onclick="endGame()" style="display:none">סיים וראה סיכום 🏁</button>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="card endcard" id="endCard" style="display:none">
+    <div class="big" id="endEmoji">🏆</div>
+    <h2 id="endTitle"></h2>
+    <p id="endStats"></p>
+    <p id="endMsg"></p>
+    <div class="btns">
+      <button class="primary" onclick="location.reload()">שחק שוב 🔄</button>
+    </div>
+  </div>
+
+  <div class="disclaimer">כלי לימוד אישי בלבד — בכל מקרה של ספק, האוגדן הרשמי קובע.<br>מבוסס על אוגדן פרוטוקולים ALS, איחוד הצלה 2023.</div>
+</div>
+
+<script>
+/* ================= נתונים ================= */
+const FORM_PAIRS=[
+ {d:'אדרנלין', a:'אמפולה 1 מ"ג / 1 מ"ל'},
+ {d:'אטרופין', a:'אמפולה 1 מ"ג / 1 מ"ל'},
+ {d:'אמיודארון', a:'אמפולה 150 מ"ג / 3 מ"ל'},
+ {d:'לידוקאין', a:'200 מ"ג / 10 מ"ל (2%)'},
+ {d:'מגנזיום סולפאט', a:'אמפולה 5 גרם / 10 מ"ל (50%)'},
+ {d:'סודיום ביקרבונט', a:'בקבוק 8.4% / 100 מ"ל (מאק"ו)'},
+ {d:'נרקאן', a:'אמפולה 0.4 מ"ג / 1 מ"ל'},
+ {d:'דופמין', a:'אמפולה 200 מ"ג / 5 מ"ל'},
+ {d:'דורמיקום', a:'אמפולה 5 מ"ג / 1 מ"ל'},
+ {d:'אטומידאט', a:'אמפולה 20 מ"ג / 10 מ"ל (אמולסיה)'},
+ {d:'קטאמין', a:'פלאקון 500 מ"ג / 10 מ"ל'},
+ {d:'ניטרטים (תרסיס)', a:'איזוקט 1.25 מ"ג או ניטרולינגואל 0.4 מ"ג ללחיצה'},
+ {d:'איזוקט לעירוי', a:'10 מ"ג / 10 מ"ל'},
+ {d:'פוסיד', a:'אמפולה 20 מ"ג / 2 מ"ל'},
+ {d:'ונטולין', a:'בקבוקון 100 מ"ג / 20 מ"ל (5 מ"ג במ"ל)'},
+ {d:'אירוונט', a:'בקבוקון 5 מ"ג / 20 מ"ל (0.25 מ"ג במ"ל)'},
+ {d:'סולומדרול', a:'פלאקון: 125 מ"ג אבקה + 2 מ"ל נוזל'},
+ {d:'גלוקוז (דקסטרוז)', a:'10 גרם / 20 מ"ל (50%)'},
+ {d:'גלוקוג\'ל', a:'שפורפרת ג\'ל 15 גרם'},
+ {d:'אדנוזין', a:'אמפולה 6 מ"ג / 2 מ"ל'},
+ {d:'איקקור (וראפמיל)', a:'אמפולה 5 מ"ג / 2 מ"ל'},
+ {d:'פרונסטיל', a:'1 גרם / 10 מ"ל'},
+ {d:'קפטופריל', a:'טבליות 25 מ"ג'},
+ {d:'אספירין', a:'כדור 100 מ"ג או 300 מ"ג'},
+ {d:'מורפיום', a:'אמפולה 10 מ"ג / 1 מ"ל'},
+ {d:'פראמין', a:'אמפולה 10 מ"ג / 2 מ"ל'},
+ {d:'אקמול', a:'אמפולה 1 גרם / 100 מ"ל או כדור 500 מ"ג'},
+ {d:'אופטלגין', a:'אמפולה 1 גרם / 2 מ"ל'},
+ {d:'טרמדקס', a:'אמפולה 100 מ"ג / 2 מ"ל'},
+ {d:'הפרין', a:'25,000 יחידות / 5 מ"ל'},
+ {d:'הקסקפרון', a:'אמפולה 500 מ"ג / 10 מ"ל'},
+];
+const DOSE_PAIRS=[
+ {d:'אדרנלין — דום לב', a:'1 מ"ג IV/IO כל 3–5 דקות'},
+ {d:'אדרנלין — אנאפילקסיס', a:'0.3–0.5 מ"ג IM, עד 3 מנות'},
+ {d:'אדרנלין — אסתמה קשה', a:'0.3 מ"ג SC'},
+ {d:'אדרנלין — ברדיקרדיה (דריפ)', a:'2–10 מק"ג/דקה'},
+ {d:'אמיודארון — VF/pVT', a:'300 מ"ג ואז 150 מ"ג בפוש'},
+ {d:'אמיודארון — טכיקרדיה (העמסה)', a:'150 מ"ג במשך 10 דקות'},
+ {d:'לידוקאין — VF/pVT', a:'1–1.5 מ"ג/ק"ג'},
+ {d:'מגנזיום — Torsades de Pointes', a:'1–2 גרם בבולוס איטי'},
+ {d:'מגנזיום — אסתמה קשה', a:'2 גרם בטפטוף 20 דקות'},
+ {d:'מגנזיום — אקלמפסיה', a:'6 גרם (10%) ב-15–20 דקות'},
+ {d:'סודיום ביקרבונט — דום לב', a:'1 מאק"ו/ק"ג'},
+ {d:'נרקאן — הרעלת אופיאטים', a:'0.4 מ"ג IV באיטיות'},
+ {d:'דופמין — שוק', a:'5–20 מק"ג/ק"ג/דקה'},
+ {d:'דורמיקום — פרכוס', a:'IV 2.5–5 מ"ג / IM 5 / IN 10'},
+ {d:'דורמיקום — סדציה לאינטובציה', a:'0.1–0.2 מ"ג/ק"ג, מקס׳ 10 מ"ג'},
+ {d:'אטומידאט — אינדוקציה', a:'0.2–0.3 מ"ג/ק"ג, מקס׳ 60 מ"ג'},
+ {d:'קטאמין — סדציה לאינטובציה', a:'2–3 מ"ג/ק"ג IV'},
+ {d:'קטאמין — שיכוך כאב', a:'0.2 מ"ג/ק"ג IV'},
+ {d:'אטרופין — ברדיקרדיה', a:'1 מ"ג כל 3–5 דקות, מקס׳ 3 מ"ג'},
+ {d:'אטרופין — זרחנים אורגניים (קשה)', a:'2–4 מ"ג, ללא מינון מקסימלי'},
+ {d:'ניטרטים — בצקת ריאות / ACS', a:'פאף אחד SL, עד 3 בהפרש 3–5 דקות'},
+ {d:'איזוקט IV — בצקת ריאות', a:'20–200 מק"ג/דקה'},
+ {d:'פוסיד — בצקת ריאות', a:'1 מ"ג/ק"ג, מקס׳ 120 מ"ג'},
+ {d:'ונטולין — התקף קשה', a:'5 מ"ג באינהלציה'},
+ {d:'ונטולין — התקף קל/בינוני', a:'2.5 מ"ג באינהלציה'},
+ {d:'אירוונט — אסתמה/COPD', a:'0.5 מ"ג (2 מ"ל) באינהלציה'},
+ {d:'סולומדרול — אסתמה/אנאפילקסיס', a:'125 מ"ג IV חד-פעמי'},
+ {d:'גלוקוז — היפוגליקמיה', a:'20 גרם IV במיהול 25%'},
+ {d:'אדנוזין — PSVT', a:'6 מ"ג ואז 12 מ"ג בפוש מהיר'},
+ {d:'איקקור — טכיקרדיה צרה', a:'2.5–5 מ"ג במשך 2 דקות'},
+ {d:'פרונסטיל — טכיקרדיה', a:'20–50 מ"ג/דקה'},
+ {d:'קלציום גלוקונאט — אנטידוט', a:'1–2 גרם IV איטי'},
+ {d:'קפטופריל — יל"ד ממאיר', a:'12.5 מ"ג בהמסה מתחת ללשון'},
+ {d:'אספירין — ACS', a:'160–325 מ"ג בלעיסה'},
+ {d:'מורפיום — ACS', a:'0.05 מ"ג/ק"ג, מקס׳ 5 מ"ג'},
+ {d:'הפרין — STEMI', a:'5,000 יחידות IV'},
+ {d:'הקסקפרון — דימום בטראומה', a:'1 גרם בטפטוף 10 דקות'},
+ {d:'אקמול — כאב בינוני', a:'500–1,000 מ"ג IV ב-10 דקות'},
+ {d:'אופטלגין — כאב בינוני', a:'1,000 מ"ג מהול ב-100 מ"ל סליין'},
+ {d:'טרמדקס — כאב בינוני', a:'50–100 מ"ג (קשיש: 25–50)'},
+ {d:'מורפיום — כאב חזק', a:'0.05–0.1 מ"ג/ק"ג IV'},
+ {d:'פראמין — בחילות', a:'10 מ"ג IV'},
+];
+
+/* ================= מצב ================= */
+let mode='form', rounds=[], roundIdx=0, sel=null, matched=0, mistakes=0, totalMistakes=0, perfect=0, roundsPlayed=0;
+let timerStart=null, timerInt=null;
+
+function pickMode(el){
+  document.querySelectorAll('.mode').forEach(m=>m.classList.remove('on'));
+  el.classList.add('on'); mode=el.dataset.mode;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function buildRounds(){
+  const src = mode==='form'?FORM_PAIRS.slice():mode==='dose'?DOSE_PAIRS.slice():null;
+  const makeFrom=(pairs)=>{
+    const pool=shuffle(pairs.slice());
+    const rs=[];
+    while(pool.length){
+      const round=[], used=new Set();
+      for(let i=0;i<pool.length && round.length<10;){
+        const p=pool[i];
+        if(used.has(p.a)){i++; continue;}
+        used.add(p.a); round.push(p); pool.splice(i,1);
+      }
+      if(round.length>=6) rs.push(round);
+      else break;
+    }
+    return rs;
+  };
+  if(mode==='mix'){
+    const a=makeFrom(FORM_PAIRS.slice()), b=makeFrom(DOSE_PAIRS.slice());
+    rounds=[]; const both=[a,b]; let t=0;
+    while(a.length||b.length){ const s=both[t%2]; if(s.length) rounds.push({items:s.shift(), kind:t%2===0?'form':'dose'}); t++; }
+  } else {
+    rounds=makeFrom(src).map(r=>({items:r, kind:mode}));
+  }
+}
+
+function startGame(){
+  buildRounds();
+  roundIdx=0; totalMistakes=0; perfect=0; roundsPlayed=0;
+  document.getElementById('startCard').style.display='none';
+  document.getElementById('gameCard').style.display='block';
+  document.getElementById('scorebar').style.display='flex';
+  loadRound();
+}
+
+function fmtTime(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+function loadRound(){
+  const r=rounds[roundIdx];
+  matched=0; mistakes=0; sel=null;
+  document.getElementById('roundTitle').textContent='סבב '+(roundIdx+1)+' מתוך '+rounds.length+' · '+r.items.length+' התאמות';
+  document.getElementById('roundMode').textContent=r.kind==='form'?'💊 צורת הופעה':'🧪 מינון';
+  document.getElementById('rightHead').textContent=r.kind==='form'?'תרופות':'תרופה + הקשר';
+  document.getElementById('leftHead').textContent=r.kind==='form'?'צורות הופעה':'מינונים';
+  document.getElementById('sRound').textContent=(roundIdx+1)+'/'+rounds.length;
+  document.getElementById('sMistakes').textContent='0';
+  document.getElementById('sMatched').textContent='0/'+r.items.length;
+  document.getElementById('feedback').textContent=''; document.getElementById('feedback').className='feedback';
+  document.getElementById('nextRoundBtn').style.display='none';
+  document.getElementById('finishBtn').style.display='none';
+  const colA=document.getElementById('colA'), colB=document.getElementById('colB');
+  colA.innerHTML=''; colB.innerHTML='';
+  const left=shuffle(r.items.map((p,i)=>({t:p.d, id:i})));
+  const right=shuffle(r.items.map((p,i)=>({t:p.a, id:i})));
+  left.forEach(o=>colA.appendChild(makeItem(o,'A')));
+  right.forEach(o=>colB.appendChild(makeItem(o,'B')));
+  timerStart=Date.now();
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{document.getElementById('sTime').textContent=fmtTime(Math.floor((Date.now()-timerStart)/1000));},500);
+  document.getElementById('sTime').textContent='0:00';
+}
+
+function makeItem(o,side){
+  const el=document.createElement('div');
+  el.className='item'; el.textContent=o.t;
+  el.dataset.id=o.id; el.dataset.side=side;
+  el.onclick=()=>clickItem(el);
+  return el;
+}
+
+function clickItem(el){
+  if(el.classList.contains('done')) return;
+  if(sel===el){ el.classList.remove('sel'); sel=null; return; }
+  if(!sel || sel.dataset.side===el.dataset.side){
+    if(sel) sel.classList.remove('sel');
+    sel=el; el.classList.add('sel'); return;
+  }
+  // צדדים שונים — בדיקת התאמה
+  const a=sel, b=el;
+  a.classList.remove('sel');
+  if(a.dataset.id===b.dataset.id){
+    a.classList.add('done'); b.classList.add('done');
+    const tag=document.createElement('span'); tag.className='tag'; tag.textContent='✓';
+    b.appendChild(tag.cloneNode(true)); a.appendChild(tag);
+    matched++;
+    const r=rounds[roundIdx];
+    document.getElementById('sMatched').textContent=matched+'/'+r.items.length;
+    if(matched===r.items.length) finishRound();
+  } else {
+    mistakes++; totalMistakes++;
+    document.getElementById('sMistakes').textContent=mistakes;
+    a.classList.add('wrong'); b.classList.add('wrong');
+    setTimeout(()=>{a.classList.remove('wrong'); b.classList.remove('wrong');},400);
+    const fb=document.getElementById('feedback');
+    fb.className='feedback err'; fb.textContent='❌ לא מתאים — נסה שוב';
+    setTimeout(()=>{ if(fb.classList.contains('err')){fb.textContent=''; fb.className='feedback';} },1200);
+  }
+  sel=null;
+}
+
+function finishRound(){
+  clearInterval(timerInt);
+  roundsPlayed++;
+  const secs=Math.floor((Date.now()-timerStart)/1000);
+  if(mistakes===0) perfect++;
+  const fb=document.getElementById('feedback');
+  fb.className='feedback good';
+  fb.textContent=(mistakes===0?'🎯 סבב מושלם! ':'💪 הושלם! ')+'זמן: '+fmtTime(secs)+' · טעויות: '+mistakes;
+  if(roundIdx<rounds.length-1) document.getElementById('nextRoundBtn').style.display='inline-block';
+  document.getElementById('finishBtn').style.display='inline-block';
+}
+
+function nextRound(){ roundIdx++; loadRound(); }
+
+function endGame(){
+  clearInterval(timerInt);
+  document.getElementById('gameCard').style.display='none';
+  const end=document.getElementById('endCard');
+  end.style.display='block';
+  let emoji='🏆', title='אלוף ההתאמות!', msg='שליטה מצוינת בתרופות. שווה לנסות גם את מצב המינונים או המעורב.';
+  if(roundsPlayed===0){ emoji='🤔'; title='עוד לא שיחקת'; msg='נסה סבב אחד לפחות.'; }
+  else if(totalMistakes>roundsPlayed*4){ emoji='📚'; title='ממשיכים לתרגל'; msg='חזור לאוגדן ונסה שוב — זה נכנס לראש עם החזרות.'; }
+  else if(totalMistakes>roundsPlayed*1.5){ emoji='💪'; title='כל הכבוד!'; msg='בסיס טוב — עוד כמה סבבים ותהיה מושלם.'; }
+  document.getElementById('endEmoji').textContent=emoji;
+  document.getElementById('endTitle').textContent=title;
+  document.getElementById('endStats').textContent='סבבים שהושלמו: '+roundsPlayed+' · סבבים מושלמים: '+perfect+' · סה"כ טעויות: '+totalMistakes;
+  document.getElementById('endMsg').textContent=msg;
+}
+</script>
+</body>
+</html>

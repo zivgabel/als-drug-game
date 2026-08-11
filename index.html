@@ -20,6 +20,9 @@
   header{text-align:center; margin-bottom:18px;}
   header h1{font-size:1.7rem; color:var(--accent2); letter-spacing:.5px;}
   header p{color:var(--dim); font-size:.9rem; margin-top:4px;}
+  .navlink{display:inline-block; margin-top:8px; color:var(--accent2); font-size:.85rem; text-decoration:none;
+    border:1px solid var(--line); border-radius:999px; padding:5px 14px; background:var(--card);}
+  .navlink:hover{border-color:var(--accent);}
   .scorebar{
     display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0 20px;
   }
@@ -104,6 +107,7 @@
   <header>
     <h1>💉 משחק התרופות — ALS מבוגרים</h1>
     <p>לפי אוגדן הפרוטוקולים של איחוד הצלה, מהדורת 2023</p>
+    <a class="navlink" href="match.html">🧩 למשחק ההתאמה</a>
   </header>
 
   <div class="scorebar" id="scorebar" style="display:none">
