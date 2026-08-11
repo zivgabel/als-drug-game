@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>בונה הפרוטוקולים — ALS מבוגרים</title>
+<style>
+  :root{
+    --bg:#0e1a2b; --card:#152840; --card2:#1b3252; --line:#2b4a72;
+    --text:#eaf1fa; --dim:#9db4d0; --accent:#4da3ff; --accent2:#7cc4ff;
+    --ok:#2ecc8f; --bad:#ff6b6b; --warn:#ffc857; --sel:#8f6bff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Segoe UI", Arial, "Noto Sans Hebrew", sans-serif;
+    background:linear-gradient(160deg,#0a1424 0%, #10233c 55%, #0d1b30 100%);
+    color:var(--text); min-height:100vh; direction:rtl;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:24px 16px 60px;}
+  header{text-align:center; margin-bottom:14px;}
+  header h1{font-size:1.7rem; color:var(--accent2);}
+  header p{color:var(--dim); font-size:.9rem; margin-top:4px;}
+  .navlink{display:inline-block; margin:8px 3px 0; color:var(--accent2); font-size:.85rem; text-decoration:none;
+    border:1px solid var(--line); border-radius:999px; padding:5px 14px; background:var(--card);}
+  .navlink:hover{border-color:var(--accent);}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.35);}
+  .startcard h2{color:var(--accent2); margin-bottom:8px; text-align:center;}
+  .startcard>p{color:var(--dim); line-height:1.7; margin-bottom:16px; font-size:.95rem; text-align:center;}
+  .protogrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px;}
+  .proto{border:1.5px solid var(--line); background:var(--card2); border-radius:14px; padding:14px; cursor:pointer; transition:.15s;}
+  .proto:hover{border-color:var(--accent);}
+  .proto b{display:block; margin-bottom:4px;}
+  .proto small{color:var(--dim); font-size:.75rem;}
+  .proto .donemark{color:var(--ok); font-size:.8rem;}
+  .scorebar{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0 18px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 14px; font-size:.85rem; color:var(--dim);}
+  .stat b{color:var(--text); font-size:1rem; margin-inline-start:6px;}
+  .flowtitle{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .flowtitle h2{color:var(--accent2); font-size:1.2rem;}
+  .backbtn{background:transparent; color:var(--dim); border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:.8rem; cursor:pointer; font-family:inherit;}
+  .slots{display:flex; flex-direction:column; align-items:stretch;}
+  .slot{
+    border:1.5px dashed var(--line); background:rgba(27,50,82,.5); border-radius:12px;
+    padding:11px 14px; font-size:.92rem; line-height:1.5; color:var(--dim); min-height:44px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .slot .num{flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--card2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:.75rem; color:var(--dim);}
+  .slot.filled{border-style:solid; border-color:var(--ok); background:rgba(46,204,143,.08); color:var(--text);}
+  .slot.filled .num{background:var(--ok); color:#03291c; border-color:var(--ok);}
+  .slot.current{border-color:var(--accent); animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(77,163,255,.35)}50%{box-shadow:0 0 0 6px rgba(77,163,255,0)}}
+  .arrow{text-align:center; color:var(--line); font-size:.9rem; line-height:1.2; margin:2px 0;}
+  .drugpanel{
+    margin:6px 0 6px 0; border:1.5px solid var(--warn); border-radius:12px; background:rgba(255,200,87,.06);
+    padding:12px 14px;
+  }
+  .drugpanel h4{color:var(--warn); font-size:.9rem; margin-bottom:8px;}
+  .drow{display:flex; gap:6px; margin-bottom:6px; align-items:stretch;}
+  .drow .dfield{position:relative; flex:1;}
+  .drow input{width:100%; background:#0f2038; border:1.5px solid var(--line); border-radius:9px; color:var(--text);
+    padding:9px 11px; font-size:.88rem; direction:rtl; outline:none; font-family:inherit;}
+  .drow input:focus{border-color:var(--accent);}
+  .drow.ok input{border-color:var(--ok); background:rgba(46,204,143,.08);}
+  .drow.bad input{border-color:var(--bad); background:rgba(255,107,107,.07);}
+  .dmark{position:absolute; inset-inline-end:10px; top:50%; transform:translateY(-50%); font-size:1rem;}
+  .mini{background:var(--card2); color:var(--accent2); border:1.5px solid var(--line); border-radius:9px; padding:0 12px;
+    font-size:.8rem; font-weight:600; cursor:pointer; font-family:inherit;}
+  .mini:hover{border-color:var(--accent);}
+  .dans{display:none; background:rgba(255,200,87,.1); border:1px solid rgba(255,200,87,.3); color:#ffe9bd;
+    border-radius:9px; padding:7px 10px; font-size:.82rem; margin-bottom:6px; line-height:1.5;}
+  .dans.show{display:block;}
+  .bank{margin-top:18px; border-top:1px solid var(--line); padding-top:14px;}
+  .bank h3{color:var(--accent2); font-size:.9rem; margin-bottom:10px;}
+  .bankitems{display:flex; flex-wrap:wrap; gap:8px;}
+  .block{
+    background:var(--card2); border:1.5px solid var(--line); border-radius:10px; padding:9px 13px;
+    font-size:.85rem; cursor:pointer; transition:.12s; line-height:1.4; user-select:none;
+  }
+  .block:hover{border-color:var(--accent);}
+  .block.used{display:none;}
+  .block.wrong{border-color:var(--bad); background:rgba(255,107,107,.12); animation:shake .3s;}
+  .block.locked{opacity:.4; pointer-events:none;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(4px)}75%{transform:translateX(-4px)}}
+  .feedback{margin-top:12px; text-align:center; min-height:22px; font-size:.9rem;}
+  .feedback.good{color:#7ee7c0;}
+  .feedback.err{color:#ffb3b3;}
+  .feedback.hintc{color:#ffe9bd;}
+  .endcard{text-align:center;}
+  .endcard .big{font-size:3rem; margin-bottom:10px;}
+  .endcard h2{color:var(--accent2); margin-bottom:8px;}
+  .endcard p{color:var(--dim); margin-bottom:6px;}
+  button.primary{background:var(--accent); color:#06182e; border:none; border-radius:10px; padding:11px 20px;
+    font-size:.95rem; font-weight:600; cursor:pointer; font-family:inherit;}
+  button.primary:hover{background:var(--accent2);}
+  .btns{display:flex; gap:10px; justify-content:center; margin-top:16px;}
+  .disclaimer{text-align:center; color:#5f7591; font-size:.75rem; margin-top:26px; line-height:1.5;}
+  @media(max-width:560px){ .drow{flex-wrap:wrap;} .drow .dfield{flex:1 1 100%;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧭 בונה הפרוטוקולים — ALS מבוגרים</h1>
+    <p>לפי אוגדן הפרוטוקולים של איחוד הצלה, מהדורת 2023</p>
+    <a class="navlink" href="index.html">💉 משחק התרחישים</a>
+    <a class="navlink" href="match.html">🧩 משחק ההתאמה</a>
+  </header>
+
+  <div class="scorebar" id="scorebar" style="display:none">
+    <div class="stat">שלבים<b id="sSteps">0/0</b></div>
+    <div class="stat">טעויות סדר<b id="sMistakes">0</b></div>
+    <div class="stat">תרופות<b id="sDrugs">0/0</b></div>
+  </div>
+
+  <!-- START -->
+  <div class="card startcard" id="startCard">
+    <h2>בחר פרוטוקול לבנייה</h2>
+    <p>תקבל שלד ריק של תרשים הזרימה ובנק קוביות מעורבבות (כולל מסיחים!).<br>
+    הנח את הקוביות לפי הסדר הנכון — וכשמגיעים לתרופה, תצטרך לתת גם<br>
+    <b>צורת הופעה, מינון ואופן הכנה</b> כדי להמשיך.</p>
+    <div class="protogrid" id="protoGrid"></div>
+  </div>
+
+  <!-- GAME -->
+  <div class="card" id="gameCard" style="display:none">
+    <div class="flowtitle">
+      <h2 id="flowName"></h2>
+      <button class="backbtn" onclick="backToMenu()">← חזרה לבחירה</button>
+    </div>
+    <div class="slots" id="slots"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="bank" id="bankBox">
+      <h3>🧱 בנק הקוביות — לחץ על הקובייה שמתאימה לשלב הבא (זהירות ממסיחים)</h3>
+      <div class="bankitems" id="bank"></div>
+    </div>
+    <div class="btns" id="doneBtns" style="display:none">
+      <button class="primary" onclick="backToMenu()">לפרוטוקול הבא ←</button>
+    </div>
+  </div>
+
+  <div class="disclaimer">כלי לימוד אישי בלבד — בכל מקרה של ספק, האוגדן הרשמי קובע.<br>מבוסס על אוגדן פרוטוקולים ALS, איחוד הצלה 2023.</div>
+</div>
+
+<script>
+/* ========= בדיקת טקסט (כמו במשחק התרחישים) ========= */
+function normalize(s){
+  s=(s||'').toString();
+  s=s.replace(/[,‎‏]/g,'').replace(/["'״׳`]/g,'').replace(/[–—−]/g,'-').toLowerCase();
+  s=s.replace(/mcg|µg|mkg/g,'מקג');
+  s=s.replace(/mg/g,'מג');
+  s=s.replace(/ml|cc|סמק/g,'מל');
+  s=s.replace(/kg/g,'קג');
+  s=s.replace(/meq/g,'מאק');
+  s=s.replace(/(\d)\s*(gr|g)(?![a-zא-ת])/g,'$1גרם');
+  s=s.replace(/גר\b/g,'גרם');
+  s=s.replace(/\s+/g,'');
+  return s;
+}
+function tokenIn(ans, tok){
+  tok=normalize(tok);
+  let idx=ans.indexOf(tok);
+  while(idx!==-1){
+    const before=idx>0?ans[idx-1]:'';
+    const after=idx+tok.length<ans.length?ans[idx+tok.length]:'';
+    const badBefore=/[\d]/.test(tok[0]) && /[\d.]/.test(before);
+    const badAfter=/[\d]/.test(tok[tok.length-1]) && /[\d]/.test(after);
+    if(!badBefore && !badAfter) return true;
+    idx=ans.indexOf(tok, idx+1);
+  }
+  return false;
+}
+function checkGroups(answer, groups){
+  const a=normalize(answer);
+  if(!a) return false;
+  return groups.every(g=>g.some(t=>tokenIn(a,t)));
+}
+
+/* ========= תרופות ========= */
+function DR(name, fa, fc, da, dc, pa, pc){ return {name, f:{a:fa,c:fc}, d:{a:da,c:dc}, p: pa?{a:pa,c:pc}:null}; }
+const ADR_ARREST=()=>DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
+  '1 מ"ג IV/IO כל 3–5 דקות (IT: 3 מ"ג)',[['1מג']],
+  'מתן בפוש + שטיפה עם 20 מ"ל סליין',[['20מל']]);
+
+const PROTOCOLS=[
+ {key:'vf', name:'⚡ דום לב — VF / Pulseless VT', sub:'שוקים, אדרנלין, אמיודארון', steps:[
+   {t:'זיהוי דום לב — הערך הכרה, נשימה ודופק ודווח למוקד'},
+   {t:'התחל החייאת C-A-B וחבר מוניטור/דפיברילטור בהקדם'},
+   {t:'התוויה לשוק — תן שוק חשמלי 200 ג\'אול (בי-פאזי)'},
+   {t:'בצע 2 דקות החייאה והשג גישה ורידית/לשדית'},
+   {t:'שוק שני ← ובצע 2 דקות החייאה'},
+   {t:'תן אדרנלין כל 3–5 דקות ושקול נתיב אוויר מתקדם', drug:ADR_ARREST()},
+   {t:'שוק שלישי ← ובצע 2 דקות החייאה'},
+   {t:'תן אמיודארון (או לידוקאין)', drug:DR('אמיודארון','אמפולה 150 מ"ג / 3 מ"ל',[['150מג'],['3מל']],
+     'מנה 1: 300 מ"ג בפוש; מנה 2: 150 מ"ג',[['300מג'],['150מג']],
+     'לשאוב למזרק 20 מ"ל ולהשלים עם סליין 0.9%',[['20מל']])},
+   {t:'שקול מגנזיום ב-TdP, חפש וטפל בגורמים הפיכים (H&T)'},
+   {t:'ROSC? עבור לפרוטוקול ROSC'},
+ ], distract:['תן אטרופין 1 מ"ג IV','בצע היפוך חשמלי מסונכרן 50 ג\'אול']},
+
+ {key:'pea', name:'💤 דום לב — Asystole / PEA', sub:'אדרנלין מוקדם וגורמים הפיכים', steps:[
+   {t:'זיהוי דום לב — במוניטור אסיסטולה או PEA'},
+   {t:'בצע 2 דקות החייאה והשג גישה ורידית/לשדית'},
+   {t:'תן אדרנלין מוקדם ככל האפשר, וכל 3–5 דקות', drug:ADR_ARREST()},
+   {t:'שקול נתיב אוויר מתקדם והמשך סבבי החייאה של 2 דקות'},
+   {t:'חפש וטפל בגורמים הפיכים (H&T)'},
+   {t:'בהתוויה (חמצת, היפרקלמיה, הרעלה, אס"ק כליות) — תן ביקרבונט', drug:DR('סודיום ביקרבונט','בקבוק 8.4% / 100 מ"ל (מאק"ו)',[['8.4'],['100מל']],
+     '1 מאק"ו לק"ג IV',[['1מאק','1meq'],['קג']],
+     'חיבור סט נוזלים לבקבוקון והזלפה מהירה',[['סט','בקבוק'],['מהיר']])},
+   {t:'ROSC? עבור לפרוטוקול ROSC | ללא שינוי — שקול הפסקת החייאה'},
+ ], distract:['תן שוק חשמלי 200 ג\'אול','תן אמיודארון 300 מ"ג בפוש']},
+
+ {key:'pulm', name:'🫁 בצקת ריאות', sub:'ניטרטים, פוסיד, CPAP', steps:[
+   {t:'הערכה ראשונית + אנמנזה, הושב את המטופל'},
+   {t:'שקול חמצן, בצע האזנה, חבר מוניטור, השג גישה ורידית, בצע אק"ג'},
+   {t:'חבר את המטופל ל-CPAP במידת הצורך'},
+   {t:'ל"ד סיסטולי מעל 100 — תן ניטרטים SL', drug:DR('ניטרטים (איזוקט/ניטרולינגואל)','תרסיס: איזוקט 1.25 מ"ג או ניטרולינגואל 0.4 מ"ג ללחיצה',[['1.25מג','0.4מג','תרסיס','ספריי']],
+     'לחיצה אחת מתחת ללשון; עד 3 מנות בהפרש 3–5 דקות',[['לחיצה','פאף','התזה','ריסוס']],
+     'לחיצה ראשונה לאוויר החדר; ל"ד לפני ואחרי כל מנה',[['אוויר','אויר'],['לד','לחץ']])},
+   {t:'תן פוסיד IV', drug:DR('פוסיד','אמפולה 20 מ"ג / 2 מ"ל',[['20מג'],['2מל']],
+     '1 מ"ג/ק"ג, מקסימום 120 מ"ג (להכפיל בנוטלים קבוע)',[['1מג'],['קג']],null,null)},
+   {t:'שקול ניטרטים IV (איזוקט בטפטוף)', drug:DR('איזוקט IV','10 מ"ג / 10 מ"ל',[['10מג'],['10מל']],
+     '20–200 מק"ג/דקה במינון עולה עד שיפור',[['20-200מקג','20מקג','200מקג']],
+     'לשאוב 2 מ"ל לשקית 100 מ"ל סליין',[['2מל'],['100מל']])},
+   {t:'ללא שיפור — שקול הפסקת נשימה מאיימת; בהלם קרדיוגני — פוסיד + דופמין'},
+   {t:'פנה בדחיפות תוך המשך ניטור, מדדים כל 5–10 דקות'},
+ ], distract:['תן אספירין בלעיסה','תן בולוס נוזלים מהיר 1 ליטר']},
+
+ {key:'asthma', name:'🌬️ אסתמה', sub:'ונטולין, סולומדרול, אדרנלין SC', steps:[
+   {t:'הערכה ראשונית + אנמנזה מהירה, הושב את המטופל, שקול חמצן'},
+   {t:'בצע האזנה, חבר מד סטורציה, הערך את חומרת ההתקף'},
+   {t:'השג גישה ורידית וחבר מוניטור'},
+   {t:'תן אינהלציית ונטולין + אירוונט', drug:DR('ונטולין','בקבוקון 100 מ"ג / 20 מ"ל (5 מ"ג במ"ל)',[['100מג','5מג'],['20מל','1מל']],
+     'קל/בינוני: 2.5 מ"ג; קשה: 5 מ"ג; עד 3 מנות בהפרש 20 דקות (+אירוונט 0.5 מ"ג)',[['2.5מג'],['5מג']],
+     'לשאוב 0.5–1 מ"ל + 2 מ"ל סליין לכוסית; חמצן 6 ליטר/דקה',[['2מל'],['6ליטר','6lpm','6ל']])},
+   {t:'שקול סולומדרול IV', drug:DR('סולומדרול','פלאקון: 125 מ"ג אבקה + 2 מ"ל נוזל',[['125מג']],
+     '125 מ"ג IV, מנה חד-פעמית',[['125מג']],
+     'לחיצה על הפקק למיסוס, ניעור עד נוזל צלול, שאיבת 2 מ"ל',[['מיסוס','לחיצ','פקק','נער'],['2מל']])},
+   {t:'התקף קשה ללא שיפור — שקול אדרנלין SC', drug:DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
+     '0.3 מ"ג SC (זהירות מעל גיל 40 / IHD)',[['0.3מג'],['sc','תתעור','סצ']],
+     '1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין → לתת 3 מ"ל; מחט 45°',[['9מל','4מל'],['3מל','1.5מל']])},
+   {t:'שקול מגנזיום IV (אסור בל"ד מתחת ל-90)', drug:DR('מגנזיום','אמפולה 5 גרם / 10 מ"ל (50%)',[['5גרם'],['10מל','50%']],
+     '2 גרם IV בטפטוף 20 דקות',[['2גרם']],
+     'לשאוב 4 מ"ל ולמהול ב-100 מ"ל D5W או NS',[['4מל'],['100מל']])},
+   {t:'שקול אינהלציות חוזרות ופנה בדחיפות תוך ניטור'},
+ ], distract:['תן פוסיד 1 מ"ג/ק"ג IV','בצע גירוי ואגלי']},
+
+ {key:'ana', name:'🐝 אנאפילקסיס', sub:'אדרנלין IM קודם לכל', steps:[
+   {t:'הערכת ABC + הפסק את החשיפה לאלרגן'},
+   {t:'תן אדרנלין IM ללא דיחוי', drug:DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
+     '0.3–0.5 מ"ג IM לירך החיצונית; עד 3 מנות בהפרש 10 דקות',[['0.3-0.5מג','0.3מג','0.5מג'],['im','שריר']],
+     'לשאוב 1 מ"ל למזרק 5 מ"ל + 2 מ"ל סליין',[['2מל','5מל']])},
+   {t:'ספק חמצן במידת הצורך, השג גישה ורידית, חבר מוניטור וסטורציה'},
+   {t:'תן אינהלציית ונטולין לפי חומרה', drug:DR('ונטולין','בקבוקון 100 מ"ג / 20 מ"ל (5 מ"ג במ"ל)',[['100מג','5מג'],['20מל','1מל']],
+     'קל/בינוני: 2.5 מ"ג; קשה: 5 מ"ג; עד 3 מנות בהפרש 20 דקות',[['2.5מג'],['5מג']],
+     'מהול ב-2 מ"ל סליין; חמצן 6 ליטר/דקה',[['2מל'],['6ליטר','6lpm','6ל']])},
+   {t:'תן סולומדרול IV', drug:DR('סולומדרול','פלאקון: 125 מ"ג אבקה + 2 מ"ל נוזל',[['125מג']],
+     '125 מ"ג IV, מנה חד-פעמית',[['125מג']],
+     'מיסוס האבקה, ניעור, שאיבת 2 מ"ל',[['מיסוס','לחיצ','פקק','נער'],['2מל']])},
+   {t:'תן נוזלים לפי חומרה: קל 1 ל\'/שעה; קשה 2–3 ל\'/שעה'},
+   {t:'ללא שיפור — אדרנלין IV', drug:DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
+     '50–100 מק"ג בבולוס כל 5–10 דקות',[['50-100מקג','50מקג','100מקג']],
+     '1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין → 100 מק"ג/מ"ל',[['9מל','10מל'],['100מקג']])},
+   {t:'שקול דופמין בהיפופרפוזיה עמידה ופנה בדחיפות תוך ניטור'},
+ ], distract:['המתן ותצפה — אולי יעבור לבד','תן אטרופין 0.5 מ"ג IV']},
+
+ {key:'seiz', name:'🧠 פרכוסים / לאחר פרכוס', sub:'דורמיקום, גלוקוז, מגנזיום', steps:[
+   {t:'אבטח נתיב אוויר, השכב את המטופל על צידו ורפד את הראש'},
+   {t:'שקול חמצן והרחק חפצים מסוכנים'},
+   {t:'השג גישה ורידית ובדוק רמת סוכר'},
+   {t:'סוכר מתחת ל-60 — תן גלוקוז IV', drug:DR('גלוקוז','10 גרם / 20 מ"ל (50%)',[['10גרם','50%'],['20מל']],
+     '20 גרם IV במיהול 25%',[['20גרם']],
+     'לשאוב 10 מ"ל למזרק 20 מ"ל + 10 מ"ל סליין → 25%',[['10מל'],['25%','20מל']])},
+   {t:'מטופל מפרכס — תן דורמיקום', drug:DR('דורמיקום','אמפולה 5 מ"ג / 1 מ"ל',[['5מג'],['1מל']],
+     'IV: 2.5–5 מ"ג | IM: 5 מ"ג | IN: 10 מ"ג; חוזרת אחרי 5–10 דקות',[['2.5-5מג','2.5מג','5מג']],
+     'לשאוב 1 מ"ל + 4 מ"ל סליין → 1 מ"ג/מ"ל',[['4מל']])},
+   {t:'בחשד לאקלמפסיה — שקול מגנזיום', drug:DR('מגנזיום','אמפולה 5 גרם / 10 מ"ל (50%)',[['5גרם'],['10מל','50%']],
+     '6 גרם IV (מיהול 10%) במשך 15–20 דקות',[['6גרם']],
+     'לשאוב 12 מ"ל ולמהול ב-100 מ"ל D5W או NS',[['12מל'],['100מל']])},
+   {t:'פנה בדחיפות תוך המשך ניטור, מדדים כל 5–10 דקות'},
+ ], distract:['החזק את הלשון עם לוחץ לשון','תן נרקאן 0.4 מ"ג IV']},
+
+ {key:'tachy', name:'💓 טכיקרדיה (יציב, צר סדיר)', sub:'ואגלי, אדנוזין, איקקור', steps:[
+   {t:'הערכת מצב + אנמנזה, זהה וטפל בגורמים הפיכים (חום, התייבשות)'},
+   {t:'שקול חמצן, חבר מוניטור לזיהוי קצב, השג גישה ורידית, בצע אק"ג'},
+   {t:'ודא: חולה יציב, קומפלקס צר (<0.12), קצב סדיר'},
+   {t:'בצע ניסיון גירוי ואגלי (ולסלבה) — תעד את הקצב'},
+   {t:'תן אדנוזין', drug:DR('אדנוזין','אמפולה 6 מ"ג / 2 מ"ל',[['6מג'],['2מל']],
+     'מנה 1: 6 מ"ג; מנה 2: 12 מ"ג (המתן 1–2 דקות)',[['6מג'],['12מג']],
+     'פוש מהיר + שטיפה מיידית 20 מ"ל סליין (מחבר T)',[['פוש','מהיר'],['20מל']])},
+   {t:'ללא תגובה — שקול איקקור', drug:DR('איקקור (וראפמיל)','אמפולה 5 מ"ג / 2 מ"ל',[['5מג'],['2מל']],
+     '2.5–5 מ"ג במשך 2 דקות; חוזרות 5 מ"ג כל 15 דקות; מקס\' 30 מ"ג',[['2.5-5מג','2.5מג','5מג']],
+     'לשאוב 2 מ"ל למזרק 5 מ"ל + 3 מ"ל סליין; ניטור ל"ד',[['3מל','5מל']])},
+   {t:'ללא תגובה — שקול אמיודארון בהעמסה', drug:DR('אמיודארון','אמפולה 150 מ"ג / 3 מ"ל',[['150מג'],['3מל']],
+     '150 מ"ג במשך 10 דקות',[['150מג'],['10דק','10ד']],
+     'אמפולה שלמה לשקית 100 מ"ל D5W',[['100מל']])},
+   {t:'חולה לא יציב — היפוך חשמלי מסונכרן (+סדציה) ופנה בדחיפות'},
+ ], distract:['תן אטרופין 1 מ"ג IV','תן שוק לא מסונכרן 200 ג\'אול']},
+
+ {key:'brady', name:'🐢 ברדיקרדיה', sub:'אטרופין, קיצוב, דריפים', steps:[
+   {t:'הערכת מצב + אנמנזה, זהה גורמים (תרופות, איסכמיה, היפוקסיה)'},
+   {t:'אבטח נתיב אוויר, שקול חמצן או הנשמה'},
+   {t:'חבר מוניטור, בצע אק"ג, השג גישה ורידית'},
+   {t:'חולה לא יציב — תן אטרופין', drug:DR('אטרופין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל']],
+     '1 מ"ג IV כל 3–5 דקות; מקסימום 3 מ"ג',[['1מג'],['3מג']],
+     'שאיבה למזרק ומתן בפוש',[['פוש','ישיר']])},
+   {t:'ללא שיפור — קיצוב חיצוני (שקול סדציה) ו/או דופמין'},
+   {t:'ו/או אדרנלין בטפטוף', drug:DR('אדרנלין','אמפולה 1 מ"ג / 1 מ"ל',[['1מג'],['1מל','אמפול']],
+     '2–10 מק"ג/דקה IV',[['2-10מקג','2מקג','10מקג']],
+     'לשאוב 1 מ"ל לשקית 100 מ"ל סליין; טפטוף איטי',[['100מל']])},
+   {t:'פנה בדחיפות תוך המשך ניטור, מדדים כל 5–10 דקות'},
+ ], distract:['תן אדנוזין 6 מ"ג בפוש','בצע גירוי ואגלי']},
+
+ {key:'acs', name:'❤️ ACS — תסמונת כלילית חריפה', sub:'אספירין, ניטרטים, מורפיום, הפרין', steps:[
+   {t:'הערכה + אנמנזה, חבר מוניטור, השג גישה ורידית, שקול חמצן (לא רוטיני)'},
+   {t:'תן אספירין בלעיסה', drug:DR('אספירין','כדור 100 מ"ג או 300 מ"ג',[['100','300'],['כדור','טבלי']],
+     '160–325 מ"ג בלעיסה',[['160-325','160','300','325'],['לעיס']],null,null)},
+   {t:'בצע אק"ג 12 חיבורים (בחשד לאוטם ימני/אחורי — חיבורים מתאימים)'},
+   {t:'ל"ד מעל 90 — תן ניטרטים SL', drug:DR('ניטרטים','תרסיס: איזוקט 1.25 מ"ג או ניטרולינגואל 0.4 מ"ג ללחיצה',[['1.25מג','0.4מג','תרסיס','ספריי']],
+     'לחיצה אחת; עד 3 מנות בהפרש 3–5 דקות',[['לחיצה','פאף','התזה','ריסוס']],
+     'לחיצה ראשונה לאוויר; ריסוס מתחת ללשון מורמת',[['אוויר','אויר','לשון']])},
+   {t:'כאב שלא הגיב לניטרטים — תן מורפיום', drug:DR('מורפיום','אמפולה 10 מ"ג / 1 מ"ל',[['10מג'],['1מל']],
+     '0.05 מ"ג/ק"ג, מקסימום 5 מ"ג; חוזרת אחרי 10 דקות',[['0.05מג'],['5מג']],
+     '1 מ"ל למזרק 10 מ"ל + 9 מ"ל סליין; בולוס איטי',[['9מל','10מל'],['איטי']])},
+   {t:'עליות ST / LBBB חדש — תן הפרין ושדר אק"ג ליחידת הלב', drug:DR('הפרין','25,000 יחידות / 5 מ"ל',[['25000'],['5מל']],
+     '5,000 יחידות IV',[['5000']],
+     'לשאוב 1 מ"ל למזרק 2.5 מ"ל',[['2.5מל','1מל']])},
+   {t:'פנה בדחיפות, הערכות חוזרות ומדדים כל 5 דקות, אק"ג חוזר'},
+ ], distract:['תן פוסיד 1 מ"ג/ק"ג IV','תן אדרנלין 0.3 מ"ג IM']},
+
+ {key:'resp', name:'😮‍💨 הפסקת נשימה מאיימת', sub:'סדציה ואינטובציה', steps:[
+   {t:'הערכה: ציאנוזה, שרירי עזר, נשימות מתחת ל-8 או היעדר נשימה'},
+   {t:'בצע סיוע נשימתי עם אמבו + חמצן (הנשמה כל 5–6 שניות)'},
+   {t:'השג גישה ורידית'},
+   {t:'בצע סדציה — דורמיקום (או קטאמין/אטומידאט)', drug:DR('דורמיקום','אמפולה 5 מ"ג / 1 מ"ל',[['5מג'],['1מל']],
+     '0.1–0.2 מ"ג/ק"ג IV/IO, מקסימום 10 מ"ג; זהירות בל"ד נמוך',[['0.1-0.2מג','0.2מג','0.1מג'],['קג']],
+     'לשאוב 1 מ"ל + 4 מ"ל סליין → 1 מ"ג/מ"ל',[['4מל']])},
+   {t:'בצע אינטובציה — פרה-אוקסיגנציה 2 דקות, שקול וידאו-לרינגוסקופ/בוז\'י'},
+   {t:'ודא מיקום: האזנה (קיבה, ריאות) + קפנוגרף, וקבע את הטובוס'},
+   {t:'כישלון — בוז\'י ← LMA ← אמבו+AW; קוניוטומיה רק בכל התנאים'},
+   {t:'המשך סדציה, העבר דיווח ופנה בדחיפות תוך ניטור'},
+ ], distract:['בצע תמרון היימליך','המתן שהמטופל יירדם מעצמו']},
+
+ {key:'loc', name:'😵 שינויים במצב ההכרה', sub:'סוכר, נרקאן, F.A.S.T', steps:[
+   {t:'הערכה ראשונית + אנמנזה מכוונת (סוכרת? סמים? טראומה?)'},
+   {t:'אבטח נתיב אוויר, השכב על הצד, שקול חמצן'},
+   {t:'השג גישה ורידית, חבר מוניטור ובדוק רמת סוכר'},
+   {t:'היפוגליקמיה בהכרה ומשתף פעולה — גלוקוג\'ל PO', drug:DR('גלוקוג\'ל','שפורפרת ג\'ל 15 גרם',[['15גרם','שפורפרת','שפופרת','גל']],
+     'שפורפרת מלאה PO',[['שפורפרת','שפופרת','מלאה']],
+     'מריחה על צידי החניכיים',[['חניכ','מריח']])},
+   {t:'היפוגליקמיה ללא הכרה — גלוקוז IV', drug:DR('גלוקוז','10 גרם / 20 מ"ל (50%)',[['10גרם','50%'],['20מל']],
+     '20 גרם IV/IO במיהול 25%',[['20גרם']],
+     'לשאוב 10 מ"ל למזרק 20 מ"ל + 10 מ"ל סליין → 25%',[['10מל'],['25%','20מל']])},
+   {t:'חשד להרעלת אופיאטים — תן נרקאן', drug:DR('נרקאן','אמפולה 0.4 מ"ג / 1 מ"ל',[['0.4מג'],['1מל']],
+     '0.4 מ"ג IV; חוזרות כל 5–10 דקות (IN: 2 מ"ג במנות 0.4)',[['0.4מג']],
+     'אמפולה מהולה במזרק 10 מ"ל — להזריק באיטיות!',[['10מל'],['איטי','לאט']])},
+   {t:'בצע בדיקת F.A.S.T — בחשד ל-CVA פנה בדחיפות והעבר דיווח למלר"ד'},
+ ], distract:['תן דורמיקום 5 מ"ג IV','תן אדרנלין 0.3 מ"ג IM']},
+];
+
+/* ========= מצב ========= */
+let proto=null, current=0, mistakes=0, drugStats={done:0,total:0,reveals:0}, doneProtos={};
+let activeDrug=null; // {stepIdx, fields:{...}}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+
+function renderMenu(){
+  const g=document.getElementById('protoGrid'); g.innerHTML='';
+  PROTOCOLS.forEach(p=>{
+    const el=document.createElement('div'); el.className='proto';
+    el.innerHTML='<b>'+p.name+'</b><small>'+p.sub+' · '+p.steps.length+' שלבים · '+p.steps.filter(s=>s.drug).length+' תרופות</small>'+(doneProtos[p.key]?'<div class="donemark">✓ הושלם (טעויות: '+doneProtos[p.key]+')</div>':'');
+    el.onclick=()=>startProto(p);
+    g.appendChild(el);
+  });
+}
+renderMenu();
+
+function startProto(p){
+  proto=p; current=0; mistakes=0; activeDrug=null;
+  drugStats={done:0,total:p.steps.filter(s=>s.drug).length,reveals:0};
+  document.getElementById('startCard').style.display='none';
+  document.getElementById('gameCard').style.display='block';
+  document.getElementById('scorebar').style.display='flex';
+  document.getElementById('doneBtns').style.display='none';
+  document.getElementById('flowName').textContent=p.name;
+  renderSlots(); renderBank(); updateStats();
+}
+
+function renderSlots(){
+  const box=document.getElementById('slots'); box.innerHTML='';
+  proto.steps.forEach((s,i)=>{
+    if(i>0){const ar=document.createElement('div'); ar.className='arrow'; ar.textContent='▼'; box.appendChild(ar);}
+    const el=document.createElement('div');
+    el.className='slot'; el.id='slot'+i;
+    el.innerHTML='<span class="num">'+(i+1)+'</span><span>?</span>';
+    box.appendChild(el);
+  });
+  setCurrent();
+}
+
+function fillSlot(i){
+  const el=document.getElementById('slot'+i);
+  el.classList.add('filled');
+  el.innerHTML='<span class="num">'+(i+1)+'</span><span>'+esc(proto.steps[i].t)+'</span>';
+}
+
+function setCurrent(){
+  document.querySelectorAll('.slot').forEach(s=>s.classList.remove('current'));
+  if(!activeDrug && proto && current<proto.steps.length){
+    document.getElementById('slot'+current).classList.add('current');
+  }
+}
+
+function renderBank(){
+  const bank=document.getElementById('bank'); bank.innerHTML='';
+  const items=proto.steps.map((s,i)=>({t:s.t,idx:i})).concat(proto.distract.map(t=>({t,idx:-1})));
+  shuffle(items).forEach(o=>{
+    const el=document.createElement('div'); el.className='block'; el.textContent=o.t;
+    el.dataset.idx=o.idx;
+    el.onclick=()=>clickBlock(el);
+    bank.appendChild(el);
+  });
+}
+
+function setBankLocked(lock){
+  document.querySelectorAll('.block').forEach(b=>b.classList.toggle('locked',lock));
+}
+
+function clickBlock(el){
+  if(activeDrug) return;
+  const idx=parseInt(el.dataset.idx);
+  const fb=document.getElementById('feedback');
+  if(idx===current){
+    el.classList.add('used');
+    const step=proto.steps[current];
+    fillSlot(current);
+    current++;
+    fb.className='feedback good'; fb.textContent='✓ נכון!';
+    setTimeout(()=>{if(fb.classList.contains('good')){fb.textContent='';}},1000);
+    if(step.drug){ openDrugPanel(current-1); }
+    else if(current===proto.steps.length){ finishProto(); }
+    setCurrent();
+  } else {
+    mistakes++;
+    el.classList.add('wrong');
+    setTimeout(()=>el.classList.remove('wrong'),400);
+    fb.className='feedback err';
+    fb.textContent = idx===-1 ? '❌ זה מסיח — הקובייה הזו לא שייכת לפרוטוקול!' : '❌ לא השלב הבא — חשוב על הסדר';
+    setTimeout(()=>{if(fb.classList.contains('err')){fb.textContent='';}},1500);
+  }
+  updateStats();
+}
+
+function openDrugPanel(stepIdx){
+  const step=proto.steps[stepIdx], d=step.drug;
+  activeDrug={stepIdx, fields:{}};
+  ['f','d','p'].forEach(k=>{ if(d[k]) activeDrug.fields[k]={ok:false,rev:false}; });
+  setBankLocked(true);
+  const slot=document.getElementById('slot'+stepIdx);
+  const pnl=document.createElement('div'); pnl.className='drugpanel'; pnl.id='dpanel'+stepIdx;
+  const labels={f:'💊 צורת הופעה', d:'🧪 מינון', p:'🧰 הכנה'};
+  const h4=document.createElement('h4');
+  h4.textContent='💊 '+d.name+' — השלם צורת הופעה, מינון והכנה כדי להמשיך';
+  pnl.appendChild(h4);
+  ['f','d','p'].forEach(k=>{
+    if(!d[k]) return;
+    const id=k+'_'+stepIdx;
+    const row=document.createElement('div'); row.className='drow'; row.id='dr_'+id;
+    const df=document.createElement('div'); df.className='dfield';
+    const inp=document.createElement('input'); inp.type='text'; inp.id='din_'+id;
+    inp.placeholder=labels[k]; inp.autocomplete='off';
+    const mark=document.createElement('span'); mark.className='dmark'; mark.id='dm_'+id;
+    df.appendChild(inp); df.appendChild(mark);
+    const bC=document.createElement('button'); bC.className='mini'; bC.textContent='בדוק';
+    bC.onclick=()=>drugCheck(k);
+    const bR=document.createElement('button'); bR.className='mini'; bR.textContent='👁'; bR.title='חשוף';
+    bR.onclick=()=>drugReveal(k);
+    row.appendChild(df); row.appendChild(bC); row.appendChild(bR);
+    const ans=document.createElement('div'); ans.className='dans'; ans.id='da_'+id;
+    pnl.appendChild(row); pnl.appendChild(ans);
+  });
+  slot.after(pnl);
+  setCurrent();
+  const first=pnl.querySelector('input'); if(first) first.focus();
+}
+
+function drugCheck(k){
+  if(!activeDrug) return;
+  const si=activeDrug.stepIdx, id=k+'_'+si;
+  const d=proto.steps[si].drug, st=activeDrug.fields[k];
+  if(!st||st.ok||st.rev) return;
+  const ok=checkGroups(document.getElementById('din_'+id).value, d[k].c);
+  const row=document.getElementById('dr_'+id);
+  row.classList.remove('ok','bad'); row.classList.add(ok?'ok':'bad');
+  document.getElementById('dm_'+id).textContent=ok?'✅':'❌';
+  if(ok){ st.ok=true; document.getElementById('din_'+id).disabled=true; }
+  drugMaybeDone();
+}
+
+function drugReveal(k){
+  if(!activeDrug) return;
+  const si=activeDrug.stepIdx, id=k+'_'+si;
+  const d=proto.steps[si].drug, st=activeDrug.fields[k];
+  if(!st||st.ok||st.rev) return;
+  st.rev=true; drugStats.reveals++;
+  const a=document.getElementById('da_'+id);
+  a.className='dans show'; a.textContent='👁 '+d[k].a;
+  document.getElementById('dm_'+id).textContent='👁';
+  document.getElementById('din_'+id).disabled=true;
+  drugMaybeDone();
+}
+
+function drugMaybeDone(){
+  if(!activeDrug) return;
+  const done=Object.values(activeDrug.fields).every(f=>f.ok||f.rev);
+  if(!done) return;
+  const si=activeDrug.stepIdx;
+  drugStats.done++;
+  const pnl=document.getElementById('dpanel'+si);
+  pnl.style.borderColor='var(--ok)';
+  pnl.querySelector('h4').textContent='✓ '+proto.steps[si].drug.name+' — הושלם';
+  activeDrug=null;
+  setBankLocked(false);
+  updateStats();
+  setCurrent();
+  if(current===proto.steps.length){ finishProto(); }
+}
+
+function updateStats(){
+  document.getElementById('sSteps').textContent=current+'/'+(proto?proto.steps.length:0);
+  document.getElementById('sMistakes').textContent=mistakes;
+  document.getElementById('sDrugs').textContent=drugStats.done+'/'+drugStats.total;
+}
+
+function finishProto(){
+  doneProtos[proto.key]=mistakes;
+  const fb=document.getElementById('feedback');
+  fb.className='feedback good';
+  fb.textContent='🏁 הפרוטוקול הושלם! טעויות סדר: '+mistakes+' · חשיפות תרופה: '+drugStats.reveals;
+  document.getElementById('doneBtns').style.display='flex';
+  document.getElementById('bankBox').style.display='none';
+}
+
+function backToMenu(){
+  document.getElementById('gameCard').style.display='none';
+  document.getElementById('scorebar').style.display='none';
+  document.getElementById('bankBox').style.display='';
+  document.querySelectorAll('.drugpanel').forEach(p=>p.remove());
+  document.getElementById('startCard').style.display='block';
+  activeDrug=null; proto=null;
+  renderMenu();
+}
+
+</script>
+</body>
+</html>
