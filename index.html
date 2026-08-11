@@ -59,6 +59,13 @@
   .field.ok input{border-color:var(--ok); background:rgba(46,204,143,.08);}
   .field.bad input{border-color:var(--bad); background:rgba(255,107,107,.07);}
   .mark{position:absolute; inset-inline-end:12px; top:50%; transform:translateY(-50%); font-size:1.1rem;}
+  .fieldrow{display:flex; gap:8px; align-items:stretch;}
+  .fieldrow .field{flex:1;}
+  .mini{background:var(--card2); color:var(--accent2); border:1.5px solid var(--line); border-radius:10px; padding:0 14px; font-size:.85rem; font-weight:600; cursor:pointer; font-family:inherit;}
+  .mini:hover{border-color:var(--accent);}
+  .mini.eye{padding:0 10px;}
+  .fieldans{display:none; margin-top:6px; background:rgba(255,200,87,.08); border:1px solid rgba(255,200,87,.3); color:#ffe9bd; border-radius:10px; padding:9px 12px; font-size:.9rem; line-height:1.6;}
+  .fieldans.show{display:block;}
   .btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;}
   button{
     border:none; border-radius:10px; padding:11px 20px; font-size:.95rem; font-weight:600;
@@ -129,35 +136,50 @@
 
     <div id="formField">
       <label>💊 צורת הופעה — איך התרופה מגיעה?</label>
-      <div class="field" id="formWrap">
-        <input type="text" id="formInput" placeholder='לדוגמה: אמפולה 1 מ"ג / 1 מ"ל' autocomplete="off">
-        <span class="mark" id="formMark"></span>
+      <div class="fieldrow">
+        <div class="field" id="formWrap">
+          <input type="text" id="formInput" placeholder='לדוגמה: אמפולה 1 מ"ג / 1 מ"ל' autocomplete="off">
+          <span class="mark" id="formMark"></span>
+        </div>
+        <button class="mini" id="formCheckBtn" onclick="checkField('form')">בדוק</button>
+        <button class="mini eye" id="formRevealBtn" onclick="revealField('form')" title="חשוף שדה זה">👁</button>
       </div>
+      <div class="fieldans" id="formAns"></div>
     </div>
 
     <div>
       <label>🧪 מינון — מה תיתן ואיך, לפי התרחיש?</label>
-      <div class="field" id="doseWrap">
-        <input type="text" id="doseInput" placeholder='לדוגמה: 1 מ"ג IV כל 3–5 דקות' autocomplete="off">
-        <span class="mark" id="doseMark"></span>
+      <div class="fieldrow">
+        <div class="field" id="doseWrap">
+          <input type="text" id="doseInput" placeholder='לדוגמה: 1 מ"ג IV כל 3–5 דקות' autocomplete="off">
+          <span class="mark" id="doseMark"></span>
+        </div>
+        <button class="mini" id="doseCheckBtn" onclick="checkField('dose')">בדוק</button>
+        <button class="mini eye" id="doseRevealBtn" onclick="revealField('dose')" title="חשוף שדה זה">👁</button>
       </div>
+      <div class="fieldans" id="doseAns"></div>
     </div>
 
     <div id="prepField">
       <label>🧰 הכנה — איך מכינים את התרופה?</label>
-      <div class="field" id="prepWrap">
-        <input type="text" id="prepInput" placeholder='לדוגמה: לשאוב 2 מ"ל לשקית 100 מ"ל סליין' autocomplete="off">
-        <span class="mark" id="prepMark"></span>
+      <div class="fieldrow">
+        <div class="field" id="prepWrap">
+          <input type="text" id="prepInput" placeholder='לדוגמה: לשאוב 2 מ"ל לשקית 100 מ"ל סליין' autocomplete="off">
+          <span class="mark" id="prepMark"></span>
+        </div>
+        <button class="mini" id="prepCheckBtn" onclick="checkField('prep')">בדוק</button>
+        <button class="mini eye" id="prepRevealBtn" onclick="revealField('prep')" title="חשוף שדה זה">👁</button>
       </div>
+      <div class="fieldans" id="prepAns"></div>
     </div>
 
     <div class="feedback" id="feedback"></div>
     <div class="answerbox" id="answerBox"></div>
 
     <div class="btns" id="btnRow">
-      <button class="primary" id="checkBtn" onclick="checkAnswer()">בדוק ✓</button>
+      <button class="primary" id="checkBtn" onclick="checkAnswer()">בדוק הכל ✓</button>
       <button class="ghost" id="hintBtn" onclick="showHint()">רמז 💡</button>
-      <button class="ghost" id="revealBtn" onclick="reveal()">הצג תשובה 👁</button>
+      <button class="ghost" id="revealBtn" onclick="reveal()">חשוף הכל 👁</button>
       <button class="success" id="nextBtn" onclick="nextQ()" style="display:none">שאלה הבאה ←</button>
     </div>
   </div>
@@ -236,7 +258,7 @@ const QUESTIONS = [
  pc:[['פוש','מהיר'],['20מל']], prep:'פוש מהיר + שטיפה מיידית 20 מ"ל סליין (מחבר T), וריד קרוב למרכז.', src:'פרוטוקול טכיקרדיה'},
 {c:'הפרעות קצב', d:'איקקור (וראפמיל)', ctx:'טכיקרדיה צרה סדירה שלא הגיבה לאדנוזין. ל"ד 128/80. מהו מינון האיקקור?',
  f:F.ika, dose:'2.5–5 מ"ג IV במתן איטי במשך 2 דקות; מנות חוזרות 5 מ"ג כל 15 דקות; מקסימום 30 מ"ג.', dc:[['2.5-5מג','2.5מג','5מג']],
- pc:[['3מל','5מל'],['איטי','2דק','2ד']], prep:'לשאוב 2 מ"ל למזרק 5 מ"ל + 3 מ"ל סליין; ניטור ל"ד ודופק בין המנות.', src:'פרוטוקול טכיקרדיה'},
+ pc:[['3מל','5מל']], prep:'לשאוב 2 מ"ל למזרק 5 מ"ל + 3 מ"ל סליין; ניטור ל"ד ודופק בין המנות.', src:'פרוטוקול טכיקרדיה'},
 {c:'הפרעות קצב', d:'אמיודארון', ctx:'טכיקרדיה רחבה סדירה עם דופק, מטופל יציב. בחרת באמיודארון — מהי מנת ההעמסה?',
  f:F.amio, dose:'150 מ"ג IV במשך 10 דקות; מנה נוספת בהיעדר תגובה לאחר 5–10 דקות. אחזקה: 1 מ"ג/דקה.', dc:[['150מג'],['10דק']],
  pc:[['100מל'],['d5w','5%','דקסטרוז']], prep:'אמפולה שלמה לשקית 100 מ"ל D5W, טפטוף 10 דקות.', src:'פרוטוקול טכיקרדיה'},
@@ -261,7 +283,7 @@ const QUESTIONS = [
  pc:[['2מל'],['6ליטר','6lpm','6ל']], prep:'לשאוב 1 מ"ל + 2 מ"ל סליין; חמצן 6 ליטר/דקה.', src:'פרוטוקול אסתמה'},
 {c:'נשימה', d:'אירוונט', ctx:'באותו התקף אסתמה אתה מוסיף אירוונט לאינהלציה. מה המינון?',
  f:F.iro, dose:'0.5 מ"ג (2 מ"ל); בהתקף קשה — עד 3 מנות בשילוב ונטולין.', dc:[['0.5מג']],
- pc:[['2מל'],['6ליטר','6lpm','6ל']], prep:'לשאוב 2 מ"ל + 2 מ"ל סליין לכוסית האינהלציה.', src:'פרוטוקול אסתמה / COPD'},
+ pc:[['2מל'],['6ליטר','6lpm','6ל']], prep:'לשאוב 2 מ"ל + 2 מ"ל סליין לכוסית האינהלציה; חמצן 6 ליטר/דקה.', src:'פרוטוקול אסתמה / COPD'},
 {c:'נשימה', d:'סולומדרול', ctx:'התקף אסתמה עם גישה ורידית. אתה נותן סטרואיד — מה המינון?',
  f:F.sol, dose:'125 מ"ג IV, מנה חד-פעמית.', dc:[['125מג']],
  pc:[['מיסוס','לחיצ','פקק','נער'],['2מל']], prep:'לחיצה על פקק הפלאקון למיסוס האבקה, ניעור עד נוזל צלול, שאיבת 2 מ"ל.', src:'אסתמה / COPD / אנאפילקסיס'},
@@ -340,7 +362,7 @@ const QUESTIONS = [
 /* ---- כאב ---- */
 {c:'כאב', d:'אקמול', ctx:'שבר בקרסול, כאב 5/10 (בינוני), יש וריד. מה מינון האקמול הוורידי?',
  f:F.aca, dose:'500–1000 מ"ג IV במשך 10 דקות. (כאב קל: 500–1000 מ"ג PO).', dc:[['500-1000','1000מג','1גרם','500מג']],
- pc:[['סט','עירוי'],['10דק','10ד']], prep:'חיבור האמפולה (1 גרם / 100 מ"ל) לסט עירוי.', src:'פרוטוקול טיפול בכאב'},
+ pc:[['סט','עירוי']], prep:'חיבור האמפולה (1 גרם / 100 מ"ל) לסט עירוי.', src:'פרוטוקול טיפול בכאב'},
 {c:'כאב', d:'אופטלגין', ctx:'כאב בינוני ממקור בטני. מה מינון האופטלגין?',
  f:F.opt, dose:'1000 מ"ג IV.', dc:[['1000מג','1גרם']],
  pc:[['100מל']], prep:'למהול ב-100 מ"ל סליין; הזלפה 5–10 דקות.', src:'פרוטוקול טיפול בכאב'},
@@ -435,8 +457,23 @@ function startGame(){
   loadQ();
 }
 
+const FIELD_DEFS={
+  form:{wrap:'formWrap',input:'formInput',mark:'formMark',ans:'formAns',btnC:'formCheckBtn',btnR:'formRevealBtn',
+        groups:q=>q.f?q.f.c:null, answer:q=>q.f?q.f.a:''},
+  dose:{wrap:'doseWrap',input:'doseInput',mark:'doseMark',ans:'doseAns',btnC:'doseCheckBtn',btnR:'doseRevealBtn',
+        groups:q=>q.dc, answer:q=>q.dose},
+  prep:{wrap:'prepWrap',input:'prepInput',mark:'prepMark',ans:'prepAns',btnC:'prepCheckBtn',btnR:'prepRevealBtn',
+        groups:q=>q.pc, answer:q=>q.prep||''},
+};
+const FIELD_NAMES={form:'צורת ההופעה', dose:'המינון', prep:'ההכנה'};
+let fieldState={};
+
+function activeFields(){ const q=pool[idx]; return Object.keys(FIELD_DEFS).filter(k=>FIELD_DEFS[k].groups(q)); }
+function totalTries(){ return Object.values(fieldState).reduce((s,f)=>s+f.tries,0); }
+
 function loadQ(){
-  const q=pool[idx]; attempts=0; revealed=false;
+  const q=pool[idx];
+  fieldState={}; activeFields().forEach(k=>fieldState[k]={ok:false,revealed:false,tries:0});
   document.getElementById('qCounter').textContent='שאלה '+(idx+1)+' מתוך '+pool.length;
   document.getElementById('qAttempts').textContent='';
   document.getElementById('qDrug').textContent='💊 '+q.d;
@@ -444,9 +481,14 @@ function loadQ(){
   document.getElementById('qCtx').textContent=q.ctx;
   document.getElementById('formField').style.display=q.f?'block':'none';
   document.getElementById('prepField').style.display=q.pc?'block':'none';
-  ['formInput','doseInput','prepInput'].forEach(id=>{const el=document.getElementById(id); el.value=''; el.disabled=false;});
-  ['formWrap','doseWrap','prepWrap'].forEach(id=>document.getElementById(id).classList.remove('ok','bad'));
-  document.getElementById('formMark').textContent=''; document.getElementById('doseMark').textContent=''; document.getElementById('prepMark').textContent='';
+  Object.values(FIELD_DEFS).forEach(d=>{
+    const inp=document.getElementById(d.input); inp.value=''; inp.disabled=false;
+    document.getElementById(d.wrap).classList.remove('ok','bad');
+    document.getElementById(d.mark).textContent='';
+    const a=document.getElementById(d.ans); a.className='fieldans'; a.innerHTML='';
+    document.getElementById(d.btnC).style.display='';
+    document.getElementById(d.btnR).style.display='';
+  });
   const fb=document.getElementById('feedback'); fb.className='feedback'; fb.textContent='';
   const ab=document.getElementById('answerBox'); ab.className='answerbox'; ab.innerHTML='';
   document.getElementById('checkBtn').style.display='inline-block';
@@ -464,44 +506,73 @@ function updateStats(){
   document.getElementById('progressBar').style.width=(idx/pool.length*100)+'%';
 }
 
+function lockField(k){
+  const d=FIELD_DEFS[k];
+  document.getElementById(d.input).disabled=true;
+  document.getElementById(d.btnC).style.display='none';
+  document.getElementById(d.btnR).style.display='none';
+}
+
+function checkField(k){
+  const q=pool[idx], d=FIELD_DEFS[k], st=fieldState[k];
+  if(!st||st.ok||st.revealed) return true;
+  st.tries++;
+  const ok=checkGroups(document.getElementById(d.input).value, d.groups(q));
+  const w=document.getElementById(d.wrap);
+  w.classList.remove('ok','bad'); w.classList.add(ok?'ok':'bad');
+  document.getElementById(d.mark).textContent=ok?'✅':'❌';
+  if(ok) { st.ok=true; lockField(k); }
+  document.getElementById('qAttempts').textContent='ניסיונות: '+totalTries();
+  if(!maybeFinish() && !ok){
+    const fb=document.getElementById('feedback');
+    fb.className='feedback show err';
+    fb.innerHTML='❌ '+FIELD_NAMES[k]+' עדיין לא מדויק. נסה שוב, בקש רמז או חשוף את השדה (👁).';
+  }
+  return ok;
+}
+
+function revealField(k){
+  const q=pool[idx], d=FIELD_DEFS[k], st=fieldState[k];
+  if(!st||st.ok||st.revealed) return;
+  st.revealed=true;
+  const a=document.getElementById(d.ans);
+  a.className='fieldans show';
+  a.innerHTML='👁 '+d.answer(q);
+  document.getElementById(d.wrap).classList.remove('ok','bad');
+  document.getElementById(d.mark).textContent='👁';
+  lockField(k);
+  maybeFinish();
+}
+
 function checkAnswer(){
-  const q=pool[idx]; attempts++;
-  const formOK = q.f ? checkGroups(document.getElementById('formInput').value, q.f.c) : true;
-  const doseOK = checkGroups(document.getElementById('doseInput').value, q.dc);
-  const prepOK = q.pc ? checkGroups(document.getElementById('prepInput').value, q.pc) : true;
-  if(q.f){
-    const w=document.getElementById('formWrap');
-    w.classList.remove('ok','bad'); w.classList.add(formOK?'ok':'bad');
-    document.getElementById('formMark').textContent=formOK?'✅':'❌';
+  const ks=activeFields();
+  ks.forEach(k=>{ const st=fieldState[k]; if(!st.ok&&!st.revealed) checkField(k); });
+  const wrong=ks.filter(k=>!fieldState[k].ok&&!fieldState[k].revealed);
+  if(wrong.length){
+    const fb=document.getElementById('feedback');
+    fb.className='feedback show err';
+    fb.innerHTML='❌ עדיין לא מדויק: '+wrong.map(k=>FIELD_NAMES[k]).join(', ')+'. אפשר לבדוק ולחשוף כל שדה בנפרד.';
   }
-  const dw=document.getElementById('doseWrap');
-  dw.classList.remove('ok','bad'); dw.classList.add(doseOK?'ok':'bad');
-  document.getElementById('doseMark').textContent=doseOK?'✅':'❌';
-  if(q.pc){
-    const pw=document.getElementById('prepWrap');
-    pw.classList.remove('ok','bad'); pw.classList.add(prepOK?'ok':'bad');
-    document.getElementById('prepMark').textContent=prepOK?'✅':'❌';
-  }
-  document.getElementById('qAttempts').textContent='ניסיונות: '+attempts;
+}
+
+function maybeFinish(){
+  const ks=activeFields();
+  if(!ks.every(k=>fieldState[k].ok||fieldState[k].revealed)) return false;
+  const anyReveal=ks.some(k=>fieldState[k].revealed);
+  const allFirst=ks.every(k=>fieldState[k].ok&&fieldState[k].tries===1);
   const fb=document.getElementById('feedback');
-  if(formOK && doseOK && prepOK){
-    if(attempts===1 && !revealed){ firstTry++; }
-    if(!revealed){ streak++; solvedNoReveal++; } else { streak=0; }
-    bestStreak=Math.max(bestStreak,streak);
+  if(!anyReveal){
+    if(allFirst) firstTry++;
+    streak++; bestStreak=Math.max(bestStreak,streak);
     fb.className='feedback show good';
-    fb.innerHTML = (attempts===1?'🎯 מדויק מהניסיון הראשון! ':'💪 הגעת לתשובה הנכונה! ') + 'התשובה המלאה מוצגת למטה.';
-    showAnswer(false);
-    finishQ();
+    fb.innerHTML=allFirst?'🎯 מדויק מהניסיון הראשון! התשובה המלאה מוצגת למטה.':'💪 הגעת לתשובה הנכונה! התשובה המלאה מוצגת למטה.';
   } else {
     streak=0;
-    fb.className='feedback show err';
-    const parts=[];
-    if(q.f && !formOK) parts.push('צורת ההופעה');
-    if(!doseOK) parts.push('המינון');
-    if(q.pc && !prepOK) parts.push('ההכנה');
-    fb.innerHTML='❌ עדיין לא מדויק: '+parts.join(', ')+'. נסה שוב, בקש רמז או הצג את התשובה.';
+    fb.className='feedback show hint';
+    fb.innerHTML='👁 חלק מהתשובה נחשף — שווה לחזור על השאלה הזו בסבב הבא.';
   }
-  updateStats();
+  showAnswer(); finishQ(); updateStats();
+  return true;
 }
 
 function showHint(){
@@ -509,20 +580,14 @@ function showHint(){
   const fb=document.getElementById('feedback');
   fb.className='feedback show hint';
   let h='💡 <b>רמז — מבנה התשובה (המספרים הוסתרו):</b><br>';
-  if(q.f) h+='צורת הופעה: '+maskNums(q.f.a)+'<br>';
-  h+='מינון: '+maskNums(q.dose);
-  if(q.pc && q.prep) h+='<br>הכנה: '+maskNums(q.prep);
+  if(q.f && !fieldState.form.ok && !fieldState.form.revealed) h+='צורת הופעה: '+maskNums(q.f.a)+'<br>';
+  if(!fieldState.dose.ok && !fieldState.dose.revealed) h+='מינון: '+maskNums(q.dose)+'<br>';
+  if(q.pc && q.prep && !fieldState.prep.ok && !fieldState.prep.revealed) h+='הכנה: '+maskNums(q.prep);
   fb.innerHTML=h;
 }
 
 function reveal(){
-  revealed=true; streak=0;
-  const fb=document.getElementById('feedback');
-  fb.className='feedback show hint';
-  fb.innerHTML='👁 התשובה נחשפה — שווה לחזור על השאלה הזו בסבב הבא.';
-  showAnswer(true);
-  finishQ();
-  updateStats();
+  activeFields().forEach(k=>revealField(k));
 }
 
 function showAnswer(){
@@ -542,9 +607,7 @@ function finishQ(){
   document.getElementById('hintBtn').style.display='none';
   document.getElementById('revealBtn').style.display='none';
   document.getElementById('nextBtn').style.display='inline-block';
-  document.getElementById('formInput').disabled=true;
-  document.getElementById('doseInput').disabled=true;
-  document.getElementById('prepInput').disabled=true;
+  Object.values(FIELD_DEFS).forEach(d=>{document.getElementById(d.input).disabled=true;});
   document.getElementById('nextBtn').focus();
 }
 
