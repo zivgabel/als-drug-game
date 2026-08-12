@@ -89,7 +89,8 @@
     <div class="modes" id="modeBox">
       <div class="mode on" data-mode="form" onclick="pickMode(this)">💊 צורת הופעה<small>איך התרופה מגיעה</small></div>
       <div class="mode" data-mode="dose" onclick="pickMode(this)">🧪 מינון<small>תרופה + הקשר ← המינון</small></div>
-      <div class="mode" data-mode="mix" onclick="pickMode(this)">🎲 מעורב<small>גם וגם, כל סבב אחר</small></div>
+      <div class="mode" data-mode="ci" onclick="pickMode(this)">⛔ התוויות נגד<small>למי אסור לתת</small></div>
+      <div class="mode" data-mode="mix" onclick="pickMode(this)">🎲 מעורב<small>הכל, כל סבב אחר</small></div>
     </div>
     <button class="primary" onclick="startGame()">התחל משחק</button>
   </div>
@@ -164,6 +165,35 @@ const FORM_PAIRS=[
  {d:'הפרין', a:'25,000 יחידות / 5 מ"ל'},
  {d:'הקסקפרון', a:'אמפולה 500 מ"ג / 10 מ"ל'},
 ];
+const CI_PAIRS=[
+ {d:'אדנוזין', a:'אסתמה קשה, WPW, חסם AV דרגה 2–3'},
+ {d:'אדרנלין', a:'אין התוויית נגד מוחלטת במצב מסכן חיים'},
+ {d:'אטומידאט', a:'שוק ספטי, רגישות לביצים, מתחת לגיל 10'},
+ {d:'אטרופין', a:'גלאוקומה; זהירות בפגיעות חום (מעכב הזעה)'},
+ {d:'ניטרטים (איזוקט/ניטרולינגואל)', a:'ויאגרה/סיאליס ב-24 השעות האחרונות, אוטם ימני, ל"ד מתחת ל-90'},
+ {d:'איקקור (וראפמיל)', a:'טכיקרדיה רחבת קומפלקס, פרפור עם WPW, שימוש מקביל בחוסמי בטא'},
+ {d:'אמיודארון', a:'רגישות ליוד, פרפור פרוזדורים מעל 48 שעות או בגיל לא ידוע'},
+ {d:'אספירין', a:'גיל מתחת ל-12, המופיליה, דימום פעיל, הריון'},
+ {d:'אקמול', a:'כשל כבדי חמור'},
+ {d:'אופטלגין', a:'הריון, הנקה, מושתלי מח עצם'},
+ {d:'גלוקוג\'ל', a:'מטופל מחוסר הכרה או שאינו משתף פעולה'},
+ {d:'דופמין', a:'טכיאריתמיה, פרפור חדרים, פאוכרומוציטומה'},
+ {d:'דורמיקום', a:'זהירות רבה בל"ד מתחת ל-90; גלאוקומה צרת זווית'},
+ {d:'הפרין', a:'דימום פעיל, חשד לחבלת ראש, טראומה משמעותית ב-24 השעות'},
+ {d:'ונטולין', a:'זהירות בחולי לב — הפרעות קצב, עליית ל"ד ודופק'},
+ {d:'טרמדקס', a:'גיל מתחת ל-12, אס"ק כליות, נוטלי אופיאטים ותרופות פסיכיאטריות'},
+ {d:'מגנזיום סולפאט', a:'חסם הולכה, ל"ד מתחת ל-90; אסור IV בשעתיים שלפני הלידה'},
+ {d:'מורפיום', a:'ל"ד מתחת ל-100, ירידה במצב הכרה, אוטם ימני'},
+ {d:'נרקאן', a:'זהירות ברקע פרכוסי; עלול לגרום לתסמונת גמילה חריפה'},
+ {d:'פוסיד', a:'אנוריה; זהירות ברגישות לסולפונאמידים'},
+ {d:'פראמין', a:'אפילפסיה, גיל מתחת ל-6, חסימה או דימום במערכת העיכול'},
+ {d:'קטאמין', a:'לאחר פרכוס, ל"ד מעל 180, התקף פסיכוטי'},
+ {d:'קפטופריל', a:'אנגיואדמה בעבר, היצרות עורקי הכליה'},
+ {d:'הקסקפרון', a:'חבלת ראש קשה ומבודדת'},
+ {d:'סולומדרול', a:'זיהום פטרייתי סיסטמי'},
+ {d:'קלציום גלוקונאט', a:'היפרקלצמיה, פרפור חדרים במתן IV'},
+ {d:'סודיום ביקרבונט', a:'אובדן כלור מהקאות מרובות; זהירות באס"ק לב ובצקות'},
+];
 const DOSE_PAIRS=[
  {d:'אדרנלין — דום לב', a:'1 מ"ג IV/IO כל 3–5 דקות'},
  {d:'אדרנלין — אנאפילקסיס', a:'0.3–0.5 מ"ג IM, עד 3 מנות'},
@@ -220,7 +250,7 @@ function pickMode(el){
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function buildRounds(){
-  const src = mode==='form'?FORM_PAIRS.slice():mode==='dose'?DOSE_PAIRS.slice():null;
+  const src = mode==='form'?FORM_PAIRS.slice():mode==='dose'?DOSE_PAIRS.slice():mode==='ci'?CI_PAIRS.slice():null;
   const makeFrom=(pairs)=>{
     const pool=shuffle(pairs.slice());
     const rs=[];
@@ -237,9 +267,9 @@ function buildRounds(){
     return rs;
   };
   if(mode==='mix'){
-    const a=makeFrom(FORM_PAIRS.slice()), b=makeFrom(DOSE_PAIRS.slice());
-    rounds=[]; const both=[a,b]; let t=0;
-    while(a.length||b.length){ const s=both[t%2]; if(s.length) rounds.push({items:s.shift(), kind:t%2===0?'form':'dose'}); t++; }
+    const lists=[['form',makeFrom(FORM_PAIRS.slice())],['dose',makeFrom(DOSE_PAIRS.slice())],['ci',makeFrom(CI_PAIRS.slice())]];
+    rounds=[]; let t=0;
+    while(lists.some(l=>l[1].length)){ const [kind,arr]=lists[t%3]; if(arr.length) rounds.push({items:arr.shift(), kind}); t++; }
   } else {
     rounds=makeFrom(src).map(r=>({items:r, kind:mode}));
   }
@@ -260,9 +290,12 @@ function loadRound(){
   const r=rounds[roundIdx];
   matched=0; mistakes=0; sel=null;
   document.getElementById('roundTitle').textContent='סבב '+(roundIdx+1)+' מתוך '+rounds.length+' · '+r.items.length+' התאמות';
-  document.getElementById('roundMode').textContent=r.kind==='form'?'💊 צורת הופעה':'🧪 מינון';
-  document.getElementById('rightHead').textContent=r.kind==='form'?'תרופות':'תרופה + הקשר';
-  document.getElementById('leftHead').textContent=r.kind==='form'?'צורות הופעה':'מינונים';
+  const KIND_LBL={form:'💊 צורת הופעה', dose:'🧪 מינון', ci:'⛔ התוויות נגד'};
+  const KIND_RIGHT={form:'תרופות', dose:'תרופה + הקשר', ci:'תרופות'};
+  const KIND_LEFT={form:'צורות הופעה', dose:'מינונים', ci:'התוויות נגד'};
+  document.getElementById('roundMode').textContent=KIND_LBL[r.kind];
+  document.getElementById('rightHead').textContent=KIND_RIGHT[r.kind];
+  document.getElementById('leftHead').textContent=KIND_LEFT[r.kind];
   document.getElementById('sRound').textContent=(roundIdx+1)+'/'+rounds.length;
   document.getElementById('sMistakes').textContent='0';
   document.getElementById('sMatched').textContent='0/'+r.items.length;
